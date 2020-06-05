@@ -1,3 +1,4 @@
+from ipaddress import ip_network, ip_address
 from typing import Dict
 
 from CLI_Scripts.ALU.ALU_ADI_up_file import alu_adi_up_file
@@ -65,20 +66,62 @@ pe_l2['cvlan_id']  = int(worksheet.cell_value(23, 1))
 pe_l2['svlan_id']  = int(worksheet.cell_value(24, 1))
 
 ipv4_iface = {
-    'local_address'    : '200.32.69.45',
-    'neighbor_address' :  '200.32.69.46',
-    'netmask_lenght'   :  30,
-    'lan_net'          :  ""
+    'wan_net'           : '',
+    'netmask_length'    : 30,
+    'local_address'     : '',
+    'neighbor_address'  : ''
 }
-ipv4_iface['lan_net'] = worksheet.cell_value(27, 1)
+ipv4_iface['wan_net'] = ip_network(worksheet.cell_value(27, 1))
+ipv4_iface['local_address'] = (ipv4_iface['wan_net'].network_address + 1).compressed
+ipv4_iface['neighbor_address'] = (ipv4_iface['wan_net'].network_address + 2).compressed
+ipv4_iface['netmask_length'] = ipv4_iface['wan_net'].prefixlen
+
+"""
+ipv4_iface['lan_net'] = worksheet.cell_value(27, 1).split('/')
+ipv4_iface['local_net'] = ipv4_iface['lan_net'][0]
+ipv4_iface['local_net_list'] = ipv4_iface['local_net'].split('.')
+ipv4_iface['netmask_lenght'] = ipv4_iface['lan_net'][1]
+ipv4_iface['local_host_ip'] = int(ipv4_iface['local_net'].split('.')[-1]) + 1
+
+for i in range(0, len(ipv4_iface['local_net_list']) -1):
+    ipv4_iface['local_address'] = ipv4_iface['local_address'] + ipv4_iface['local_net_list'][i] + '.'
+ipv4_iface['local_address'] = ipv4_iface['local_address'] + str(ipv4_iface['local_host_ip'])
+
+ipv4_iface['neighbor_host_ip'] = ipv4_iface['local_host_ip'] + 1
+for i in range(0, len(ipv4_iface['local_net_list']) -1):
+    ipv4_iface['neighbor_address'] = ipv4_iface['neighbor_address'] + ipv4_iface['local_net_list'][i] + '.'
+ipv4_iface['neighbor_address'] = ipv4_iface['neighbor_address'] + str(ipv4_iface['neighbor_host_ip'])
+"""
 
 ipv6_iface = {
-    'local_address'    : '',
-    'neighbor_address' : '2001:13B0:E000:1DC::2',
-    'netmask_lenght'   : 64,
-    'lan_net'          : '2000::8/64'
+    'wan_net'           : '',
+    'netmask_length'    : 30,
+    'local_address'     : '',
+    'neighbor_address'  :  '',
 }
-ipv6_iface['lan_net'] = worksheet.cell_value(30, 1)
+
+ipv6_iface['wan_net'] = ip_network(worksheet.cell_value(30, 1))
+ipv6_iface['local_address'] = (ipv6_iface['wan_net'].network_address + 1).compressed
+ipv6_iface['neighbor_address'] = (ipv6_iface['wan_net'].network_address + 2).compressed
+ipv6_iface['netmask_length'] = ipv6_iface['wan_net'].prefixlen
+
+"""
+ipv6_iface['lan_net'] = worksheet.cell_value(30, 1).split('/')
+ipv6_iface['local_net'] = ipv6_iface['lan_net'][0]
+ipv6_iface['local_net_list'] = ipv6_iface['local_net'].split(':')
+ipv6_iface['netmask_lenght'] = ipv6_iface['lan_net'][1]
+ipv6_iface['local_host_ip'] = int(ipv6_iface['local_net'].split(':')[-1]) + 1
+
+for i in range(0, len(ipv6_iface['local_net_list']) -1):
+    ipv6_iface['local_address'] = ipv6_iface['local_address'] + ipv6_iface['local_net_list'][i] + ':'
+ipv6_iface['local_address'] = ipv6_iface['local_address'] + str(ipv6_iface['local_host_ip'])
+
+ipv6_iface['neighbor_host_ip'] = ipv6_iface['local_host_ip'] + 1
+for i in range(0, len(ipv6_iface['local_net_list']) -1):
+    ipv6_iface['neighbor_address'] = ipv6_iface['neighbor_address'] + ipv6_iface['local_net_list'][i] + ':'
+ipv6_iface['neighbor_address'] = ipv6_iface['neighbor_address'] + str(ipv6_iface['neighbor_host_ip'])
+"""
+
 routing_instance = {
     'name'      : '',
     'exists'    : '',
@@ -100,7 +143,7 @@ cpe = {
     'loopback_ipv4_address': '',
 }
 cpe['rfs'] = int(worksheet.cell_value(41, 1))
-cpe['loopback_ipv4_address'] = worksheet.cell_value(42, 1)
+cpe['loopback_ipv4_address'] = worksheet.cell_value(42, 1).split('/')
 
 nid = {
     'rfs': '',
