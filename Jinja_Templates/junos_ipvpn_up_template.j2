@@ -1,0 +1,140 @@
+{% if not DATA_VRF_EXIST %}
+    set policy-options community RT-{{DATA_VRF}}_export members target:{{DATA_VRF_TARGET_EXPORT}}
+    set policy-options community RT-{{DATA_VRF}}_import members target:{{DATA_VRF_TARGET_IMPORT}}
+
+    set policy-options policy-statement {{DATA_VRF}}-export term bgp-static-direct-export-RT from protocol bgp
+    set policy-options policy-statement {{DATA_VRF}}-export term bgp-static-direct-export-RT from protocol static
+    set policy-options policy-statement {{DATA_VRF}}-export term bgp-static-direct-export-RT from protocol direct
+    set policy-options policy-statement {{DATA_VRF}}-export term bgp-static-direct-export-RT then community add RT-{{DATA_VRF}}_export
+    set policy-options policy-statement {{DATA_VRF}}-export term bgp-static-direct-export-RT then accept
+    set policy-options policy-statement {{DATA_VRF}}-export term reject-all then reject
+    set policy-options policy-statement {{DATA_VRF}}-import term import from community RT-{{DATA_VRF}}_import
+    set policy-options policy-statement {{DATA_VRF}}-import term import then accept
+    set policy-options policy-statement {{DATA_VRF}}-import term reject-all then reject
+
+    set routing-instances {{DATA_VRF}} description {{DATA_VRF}}
+    set routing-instances {{DATA_VRF}} instance-type vrf
+
+    set routing-instances {{DATA_VRF}} route-distinguisher {{DATA_VRF_RD}}
+    set routing-instances {{DATA_VRF}} vrf-import fIMP-MGMT-import
+    set routing-instances {{DATA_VRF}} vrf-import {{DATA_VRF}}-import
+    set routing-instances {{DATA_VRF}} vrf-export fIMP-MGMT-export
+    set routing-instances {{DATA_VRF}} vrf-export {{DATA_VRF}}-export
+    set routing-instances {{DATA_VRF}} vrf-table-label
+    set routing-instances {{DATA_VRF}} routing-options maximum-prefixes 5000
+    set routing-instances {{DATA_VRF}} routing-options maximum-prefixes threshold 95
+    {% if DATA_VRF_RID %}
+        set routing-instances {{DATA_VRF}} routing-options router-id {{DATA_VRF_RID}}
+    {% endif %}
+    set routing-instances {{DATA_VRF}} routing-options auto-export
+{% endif %}
+
+set routing-instances {{DATA_VRF}} interface {{IFACE_NAME}}.{{DATA_UNIT}}
+
+{% if CPE_IPV4_ADDRESS %}
+    set routing-instances {{DATA_VRF}} routing-options static route {{CPE_IPV4_ADDRESS}}/32 next-hop {{IPV4_NEIGHBOR_ADDRESS}}
+    {# Que onda este tag?? #}
+    set routing-instances {{DATA_VRF}} routing-options static route {{CPE_IPV4_ADDRESS}}/32 tag {{STATIC_TAG}}
+{% endif %}
+
+{% if BGP_ROUTING %}
+    set routing-instances {{DATA_VRF}} protocols bgp group external type external
+    set routing-instances {{DATA_VRF}} protocols bgp group external family inet unicast
+    set routing-instances {{DATA_VRF}} protocols bgp group external export bgp-export-policy
+    set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV4_NEIGHBOR_ADDRESS}} peer-as {{PEER_AS_NUMBER}}
+    set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV4_NEIGHBOR_ADDRESS}} as-override
+    set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV4_NEIGHBOR_ADDRESS}} import vpn-customer-ecuador
+    {% if BGP_ROUTING %}
+        set routing-instances {{DATA_VRF}} protocols bgp group external type external
+        set routing-instances {{DATA_VRF}} protocols bgp group external family inet6 unicast
+        set routing-instances {{DATA_VRF}} protocols bgp group external export bgp-export-policy
+        set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV6_NEIGHBOR_ADDRESS}} peer-as {{PEER_AS_NUMBER}}
+        set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV6_NEIGHBOR_ADDRESS}} as-override
+        set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV6_NEIGHBOR_ADDRESS}} import vpn-customer-ecuador
+    {% endif %}
+{% endif %}
+
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} description "CUSTOMER: IMPS-MPLS: {{CLIENT_NAME}} (CFS:{{CID}}) [{{CID_LOCATION}}]"
+
+{% if SVLAN_ID %}
+    set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} vlan-tags outer 0x8100.{{SVLAN_ID}}
+    set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} vlan-tags inner 0x8100.{{CVLAN_ID}}
+{% else %}
+    set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} vlan-id {{CVLAN_ID}}
+{% endif %}
+
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet mtu 1500
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet filter input {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet filter output {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet policer input {{IFACE_NAME}}.{{DATA_UNIT}}-in
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet address {{IFACE_NAME_ADDR}}
+
+set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o scheduler-map GX-CUST-SCHEDULER-MAP-I
+set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o shaping-rate {{BW_TOTAL}}
+
+set class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} output-traffic-control-profile {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o
+set class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} rewrite-rules ieee-802.1 CUST-PSR->EX
+
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF_DSCP from dscp 46
+{% if EF_BW %}
+    set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF_DSCP then policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i
+{% endif %}
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF_DSCP then count EF.rx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF_DSCP then loss-priority low
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF_DSCP then forwarding-class EF
+
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF-DE_DSCP from dscp 34
+{% if EF_DE_BW %}
+    set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF-DE_DSCP then policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i
+{% endif %}
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF-DE_DSCP then count EF-DE.rx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF-DE_DSCP then loss-priority high
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF-DE_DSCP then forwarding-class EF-DE
+
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF_DSCP from dscp 26
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF_DSCP then count AF.rx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF_DSCP then loss-priority low
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF_DSCP then forwarding-class AF
+
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF-DE_DSCP from dscp 18
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF-DE_DSCP then count AF-DE.rx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF-DE_DSCP then loss-priority high
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term AF-DE_DSCP then forwarding-class AF-DE
+
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term VPN-BE from dscp 10
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term VPN-BE then count VPN-BE.rx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term VPN-BE then loss-priority high
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term VPN-BE then forwarding-class VPN-BE
+
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term BE then count BE.rx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term BE then loss-priority high
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term BE then forwarding-class BE
+
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term EF_DSCP from dscp 46
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term EF_DSCP then count EF.tx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term EF-DE_DSCP from dscp 34
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term EF-DE_DSCP then count EF-DE.tx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term AF_DSCP from dscp 26
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term AF_DSCP then count AF.tx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term AF-DE_DSCP from dscp 18
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term AF-DE_DSCP then count AF-DE.tx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term VPN-BE from dscp 10
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term VPN-BE then count VPN-BE.tx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term BE then count BE.tx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+
+set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in logical-interface-policer
+set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in if-exceeding bandwidth-limit {{TOTAL_BW}}
+set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in if-exceeding burst-size-limit {{TOTAL_BS}}
+set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in then discard
+
+{% if EF_BW %}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i if-exceeding bandwidth-limit {{EF_BW}}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i if-exceeding burst-size-limit {{EF_BS}}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i then discard
+{% endif %}
+
+{% if EF_DE_BW %}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i if-exceeding bandwidth-limit {{EF_DE_BW}}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i if-exceeding burst-size-limit {{EF_DE_BS}}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i then discard
+{% endif %}
