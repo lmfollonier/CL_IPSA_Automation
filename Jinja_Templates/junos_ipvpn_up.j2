@@ -31,7 +31,7 @@
 
 set routing-instances {{DATA_VRF}} interface {{IFACE_NAME}}.{{DATA_UNIT}}
 
-{% if CPE_IPV4_ADDRESS %}
+{% if STATIC_ROUTING and CPE_IPV4_ADDRESS %}
     set routing-instances {{DATA_VRF}} routing-options static route {{CPE_IPV4_ADDRESS}}/32 next-hop {{IPV4_NEIGHBOR_ADDRESS}}
     {# Que onda este tag?? #}
     set routing-instances {{DATA_VRF}} routing-options static route {{CPE_IPV4_ADDRESS}}/32 tag {{STATIC_TAG}}
@@ -44,7 +44,7 @@ set routing-instances {{DATA_VRF}} interface {{IFACE_NAME}}.{{DATA_UNIT}}
     set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV4_NEIGHBOR_ADDRESS}} peer-as {{PEER_AS_NUMBER}}
     set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV4_NEIGHBOR_ADDRESS}} as-override
     set routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV4_NEIGHBOR_ADDRESS}} import vpn-customer-ecuador
-    {% if BGP_ROUTING %}
+    {% if IPV6_LOCAL_ADDRESS %}
         set routing-instances {{DATA_VRF}} protocols bgp group external type external
         set routing-instances {{DATA_VRF}} protocols bgp group external family inet6 unicast
         set routing-instances {{DATA_VRF}} protocols bgp group external export bgp-export-policy
@@ -54,7 +54,7 @@ set routing-instances {{DATA_VRF}} interface {{IFACE_NAME}}.{{DATA_UNIT}}
     {% endif %}
 {% endif %}
 
-set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} description "CUSTOMER: IMPS-MPLS: {{CLIENT_NAME}} (CFS:{{CID}}) [{{CID_LOCATION}}]"
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} description "CUSTOMER: IMPS-MPLS: {{CUSTOMER_NAME}} (CFS:{{CID}}) [{{CID_LOCATION}}]"
 
 {% if SVLAN_ID %}
     set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} vlan-tags outer 0x8100.{{SVLAN_ID}}
@@ -67,7 +67,10 @@ set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet mtu 1500
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet filter input {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet filter output {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet policer input {{IFACE_NAME}}.{{DATA_UNIT}}-in
-set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet address {{IFACE_NAME_ADDR}}
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet address {{IPV4_LOCAL_ADDRESS}}/{{IPV4_NETMASK_LENGHT}}
+{% if IPV6_LOCAL_ADDRESS %}
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet6 address {{IPV6_LOCAL_ADDRESS}}/{{IPV6_NETMASK_LENGHT}}
+{% endif %}
 
 set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o scheduler-map GX-CUST-SCHEDULER-MAP-I
 set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o shaping-rate {{BW_TOTAL}}
@@ -138,3 +141,11 @@ set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in then discard
     set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i if-exceeding burst-size-limit {{EF_DE_BS}}
     set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i then discard
 {% endif %}
+
+{% for i in range(0,IPV4_RECEIVED_PREFIXES|length)  %}
+{{IPV4_RECEIVED_PREFIXES[i]}} through {{IPV4_RECEIVED_THROUGH[i]}}
+{% endfor %}
+
+{% for i in range(0,IPV6_RECEIVED_PREFIXES|length)  %}
+{{IPV6_RECEIVED_PREFIXES[i]}} through {{IPV6_RECEIVED_THROUGH[i]}}
+{% endfor %}

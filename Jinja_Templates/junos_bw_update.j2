@@ -2,11 +2,15 @@
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}-in if-exceeding bandwidth-limit {{NEW_BW}}K
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}-in if-exceeding burst-size-limit {{NEW_BS}}K
 
+{% if NEW_EF_BW %}
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.EF-i if-exceeding bandwidth-limit {{NEW_EF_BW}}K
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.EF-i if-exceeding burst-size-limit {{NEW_EF_BS}}K
+{% endif  %}
 
+{% if NEW_EF_DE_BW %}
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.EF-DE-i if-exceeding bandwidth-limit {{NEW_EF_DE_BW}}K
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.EF-DE-i if-exceeding burst-size-limit {{NEW_EF_DE_BS}}K
+{% endif  %}
 
 set class-of-service traffic-control-profiles {{DATA_IFACE}}.{{DATA_UNIT}}-{{OLD_BW}}-o scheduler-map GX-CUST-SCHEDULER-MAP-I
 set class-of-service traffic-control-profiles {{DATA_IFACE}}.{{DATA_UNIT}}-{{OLD_BW}}-o shaping-rate {{NEW_BW}}K

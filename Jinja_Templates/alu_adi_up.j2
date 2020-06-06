@@ -1,0 +1,122 @@
+{# ### CREACION DEl PERFIL DE QOS ### #}
+
+{% if QOS_ID < 100 %}
+    /configure qos sap-ingress {{QOS_ID}} create
+    /configure qos sap-ingress {{QOS_ID}} description {{QOS_PROFILE_DESCRIPTION}}
+    /configure qos sap-ingress {{QOS_ID}} queue 1 create
+    /configure qos sap-ingress {{QOS_ID}} queue 1 rate {{BW_K}}
+    /configure qos sap-ingress {{QOS_ID}} queue 11 multipoint create
+{% endif %}
+
+{# ### CREACION DE CLIENTE ### #}
+
+{% if not CUSTOMER_EXISTS %}
+    /configure service customer {{CUSTOMER_ID}} create
+    /configure service customer {{CUSTOMER_ID}} description {{CUSTOMER_NAME}}
+{% endif %}
+
+{# ### CREACION DE IES ### #}
+
+/configure service ies {{IES_ID}} customer {{CUSTOMER_ID}} create
+/configure service ies {{IES_ID}} no shutdown
+
+{# ### CREACION DE IES ### #}
+
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" create
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" no shutdown
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" description "CUSTOMER: IMPS-CLI: {{CUSTOMER_NAME}} [{{CID_LOCATION}}, CID:{{CID}}] {{SERVICE_TYPE}}@{{BW_M}}Mbps"
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" enable-ingress-stats
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" urpf-check mode loose
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" tos-marking-state trusted
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" cflowd-parameters sampling unicast type interface
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" address {{IPV4_LOCAL_ADDR}}/{{IPV4_NETMASK_LENGTH}}
+{% if IPV6_LOCAL_ADDRESS %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ipv6 address {{IPV6_LOCAL_ADDRESS}}/{{IPV6_NETMASK_LENGHT}}
+{% endif %}
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" create
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{QOS_ID}}
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" egress agg-rate rate {{TOTAL_BW}}
+
+{# ### RUTAS ESTATICAS ### #}
+
+{% if STATIC_ROUTING %}
+    /configure router static-route-entry {{IPV4_LAN_NET}} next-hop {{IPV4_NEIGHBOR_ADDR}}
+    /configure router static-route-entry {{IPV4_LAN_NET}} next-hop {{IPV4_NEIGHBOR_ADDR}} no shutdown
+    {% if IPV6_LAN_NET %}
+        /configure router static-route-entry {{IPV6_LAN_NET}} next-hop {{IPV6_NEIGHBOR_ADDRESS}}
+        /configure router static-route-entry {{IPV6_LAN_NET}} next-hop {{IPV6_NEIGHBOR_ADDRESS}} no shutdown
+    {% endif %}
+{% endif %}
+
+{# ### BGP ### #}
+{% if BGP_ROUTING %}
+
+    /configure router policy-options abort
+    /configure router policy-options begin
+
+    {# ### PREFIX LIST IPV4 ### #}
+    {% for i in range(0,IPV4_RECEIVED_PREFIXES|length)  %}
+        /configure router policy-options prefix-list "CUSTOMER:AS{{PEER_AS_NUMBER}}" prefix {{IPV4_RECEIVED_PREFIXES[i]}} through {{IPV4_RECEIVED_THROUGH[i]}}
+    {% endfor %}
+
+    {# ### POLICY IPV4 ### #}
+    /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}" entry 5 description "CUSTOMER:AS{{PEER_AS_NUMBER}}-PREFIXES"
+    /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}" entry 5 from prefix-list "CUSTOMER:AS{{PEER_AS_NUMBER}}"
+    /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}" entry 5 action next-policy
+    /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}" default-action reject
+    /configure router policy-options commit
+
+    {# ### NEIGHBOR IPV4 ### #}
+    /configure router bgp group "AS{{PEER_AS_NUMBER}}" type external
+    /configure router bgp group "AS{{PEER_AS_NUMBER}}" peer-as {{PEER_AS_NUMBER}}
+    /configure router bgp group "AS{{PEER_AS_NUMBER}}" neighbor {{IPV4_NEIGHBOR_ADDR}} description "{{CUSTOMER_NAME}} [{{CID_LOCATION}}, CID:{{CID}}]"
+    /configure router bgp group "AS{{PEER_AS_NUMBER}}" neighbor {{IPV4_NEIGHBOR_ADDR}} remove-private
+    /configure router bgp group "AS{{PEER_AS_NUMBER}}" neighbor {{IPV4_NEIGHBOR_ADDR}} family ipv4
+    /configure router bgp group "AS{{PEER_AS_NUMBER}}" neighbor {{IPV4_NEIGHBOR_ADDR}} import "CUSTOMER:AS{{PEER_AS_NUMBER}}" "transit-customer-map"
+    {% if not SEND_FULL_TABLE %}
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}" neighbor {{IPV4_NEIGHBOR_ADDR}} export "send-default" "none"
+    {% else %}
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}" neighbor {{IPV4_NEIGHBOR_ADDR}} export "send-default" "rfc1918" "global-routes"
+    {% endif %}
+    /configure router bgp group "AS{{PEER_AS_NUMBER}}" neighbor {{IPV4_NEIGHBOR_ADDR}} prefix-limit ipv4 5000 threshold 90
+
+    {# ### SE AGREGA LA IP DEL NEIGHBOR AL ACCESS LIST ### #}
+    /configure filter match-list ip-prefix-list "cust-bgp" prefix {{IPV4_NEIGHBOR_ADDR}}/32
+
+    {% if IPV6_NEIGHBOR_ADDRESS %}
+
+        /configure router policy-options abort
+        /configure router policy-options begin
+
+        {# ### PREFIX LIST IPV6 ### #}
+        {% for i in range(0,IPV6_RECEIVED_PREFIXES|length)  %}
+            /configure router policy-options prefix-list "CUSTOMER:AS{{PEER_AS_NUMBER}}-IPV6" prefix {{IPV6_RECEIVED_PREFIXES[i]}} through {{IPV6_RECEIVED_THROUGH[i]}}
+        {% endfor %}
+
+        {# ### POLICY IPV6 ### #}
+        /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}-IPV6" entry 5 description "CUSTOMER:AS{{PEER_AS_NUMBER}}-PREFIXES-IPV6"
+        /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}-IPV6" entry 5 from prefix-list "CUSTOMER:AS{{PEER_AS_NUMBER}}-IPV6"
+        /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}-IPV6" entry 5 action next-policy
+        /configure router policy-options policy-statement "CUSTOMER:AS{{PEER_AS_NUMBER}}-IPV6" default-action reject
+        /configure router policy-options commit
+
+        {# ### NEIGHBOR IPV6 ### #}
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" family ipv6
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" type external
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" peer-as {{PEER_AS_NUMBER}}
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" neighbor {{IPV6_NEIGHBOR_ADDRESS}} description "{{CUSTOMER_NAME}} [{{CID_LOCATION}}, CID:{{CID}}]"
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" neighbor {{IPV6_NEIGHBOR_ADDRESS}} remove-private
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" neighbor {{IPV6_NEIGHBOR_ADDRESS}} family ipv6
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" neighbor {{IPV6_NEIGHBOR_ADDRESS}} import "CUSTOMER:AS{{PEER_AS_NUMBER}}-IPV6"
+        {% if not SEND_FULL_TABLE %}
+            /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" neighbor {{IPV6_NEIGHBOR_ADDRESS}} export "default-originate-ipv6"
+        {% else %}
+            /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" neighbor {{IPV6_NEIGHBOR_ADDRESS}} "send-default" "rfc1918" "global-routes"
+        {% endif %}
+        /configure router bgp group "AS{{PEER_AS_NUMBER}}-IPV6" neighbor {{IPV6_NEIGHBOR_ADDRESS}} prefix-limit ipv6 2000 threshold 90
+
+        {# ### SE AGREGA LA IP DEL NEIGHBOR AL ACCESS LIST ### #}
+        /configure filter match-list ipv6-prefix-list "cust-bgp-ipv6" prefix {{IPV6_NEIGHBOR_ADDRESS}}/128
+
+     {% endif %}
+{% endif %}
