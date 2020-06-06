@@ -1,7 +1,7 @@
 from ipaddress import ip_network, ip_address
 from typing import Dict
 
-from CLI_Scripts.ALU.ALU_ADI_up_file import alu_adi_up_file
+from CLI_Scripts.ALU.ALU_ADI_up_file import alu_adi_up_file, alu_adi_up_file2
 from CLI_Scripts.Juniper.JunOS_BW_update import junos_bw_update_file2
 from CLI_Scripts.Juniper.JunOS_IPVPN_up_file import junos_ipvpn_up_file2
 from Init.files_manager import init_do_files
@@ -69,6 +69,7 @@ ipv4_iface = {
     'wan_net'           : '',
     'netmask_length'    : 30,
     'local_address'     : '',
+    'lan_net'           : '3.3.3.0/10',
     'neighbor_address'  : ''
 }
 ipv4_iface['wan_net'] = ip_network(worksheet.cell_value(27, 1))
@@ -76,27 +77,11 @@ ipv4_iface['local_address'] = (ipv4_iface['wan_net'].network_address + 1).compre
 ipv4_iface['neighbor_address'] = (ipv4_iface['wan_net'].network_address + 2).compressed
 ipv4_iface['netmask_length'] = ipv4_iface['wan_net'].prefixlen
 
-"""
-ipv4_iface['lan_net'] = worksheet.cell_value(27, 1).split('/')
-ipv4_iface['local_net'] = ipv4_iface['lan_net'][0]
-ipv4_iface['local_net_list'] = ipv4_iface['local_net'].split('.')
-ipv4_iface['netmask_lenght'] = ipv4_iface['lan_net'][1]
-ipv4_iface['local_host_ip'] = int(ipv4_iface['local_net'].split('.')[-1]) + 1
-
-for i in range(0, len(ipv4_iface['local_net_list']) -1):
-    ipv4_iface['local_address'] = ipv4_iface['local_address'] + ipv4_iface['local_net_list'][i] + '.'
-ipv4_iface['local_address'] = ipv4_iface['local_address'] + str(ipv4_iface['local_host_ip'])
-
-ipv4_iface['neighbor_host_ip'] = ipv4_iface['local_host_ip'] + 1
-for i in range(0, len(ipv4_iface['local_net_list']) -1):
-    ipv4_iface['neighbor_address'] = ipv4_iface['neighbor_address'] + ipv4_iface['local_net_list'][i] + '.'
-ipv4_iface['neighbor_address'] = ipv4_iface['neighbor_address'] + str(ipv4_iface['neighbor_host_ip'])
-"""
-
 ipv6_iface = {
     'wan_net'           : '',
     'netmask_length'    : 30,
     'local_address'     : '',
+    'lan_net'           : '20005::0/10',
     'neighbor_address'  :  '',
 }
 
@@ -104,23 +89,6 @@ ipv6_iface['wan_net'] = ip_network(worksheet.cell_value(30, 1))
 ipv6_iface['local_address'] = (ipv6_iface['wan_net'].network_address + 1).compressed
 ipv6_iface['neighbor_address'] = (ipv6_iface['wan_net'].network_address + 2).compressed
 ipv6_iface['netmask_length'] = ipv6_iface['wan_net'].prefixlen
-
-"""
-ipv6_iface['lan_net'] = worksheet.cell_value(30, 1).split('/')
-ipv6_iface['local_net'] = ipv6_iface['lan_net'][0]
-ipv6_iface['local_net_list'] = ipv6_iface['local_net'].split(':')
-ipv6_iface['netmask_lenght'] = ipv6_iface['lan_net'][1]
-ipv6_iface['local_host_ip'] = int(ipv6_iface['local_net'].split(':')[-1]) + 1
-
-for i in range(0, len(ipv6_iface['local_net_list']) -1):
-    ipv6_iface['local_address'] = ipv6_iface['local_address'] + ipv6_iface['local_net_list'][i] + ':'
-ipv6_iface['local_address'] = ipv6_iface['local_address'] + str(ipv6_iface['local_host_ip'])
-
-ipv6_iface['neighbor_host_ip'] = ipv6_iface['local_host_ip'] + 1
-for i in range(0, len(ipv6_iface['local_net_list']) -1):
-    ipv6_iface['neighbor_address'] = ipv6_iface['neighbor_address'] + ipv6_iface['local_net_list'][i] + ':'
-ipv6_iface['neighbor_address'] = ipv6_iface['neighbor_address'] + str(ipv6_iface['neighbor_host_ip'])
-"""
 
 routing_instance = {
     'name'      : '',
@@ -154,7 +122,7 @@ nid['ipv4_address'] = worksheet.cell_value(46, 1)
 
 qos = {
     'qos_profile_id'                : 146,
-    'total_bandwidth'               : 1024, # TODO: Sacarlo
+    'qos_profile_description'       : 'Esto es solo por si hay que crearlo',
     'old_bandwidth'                 : 3072,
     'new_bandwidth'                 : 1536,
     'new_burst_size'                : '',
@@ -179,31 +147,33 @@ qos['new_burst_size_ef_de'] = int(qos['new_bandwidth_ef_de'] * 0.0375)
 # Genera estaticas a la loopback del CPE, y a la LAN
 static_routing = {
     'enabled'    : False,
+    'ipv4_lan' : "",
+    'ipv6_lan': "",
     'tag'               : '10'
 }
 static_routing['enabled'] = worksheet.cell_value(56, 1)
-static_routing['tag'] = int(worksheet.cell_value(57, 1))
+static_routing['ipv4_lan'] = worksheet.cell_value(57, 1)
+static_routing['ipv6_lan'] = worksheet.cell_value(58, 1)
+static_routing['tag'] = int(worksheet.cell_value(59, 1))
 
 bgp_routing = {
     'enabled'               : True,
     'peer_as_number'            : 10753,
-    'ipv4_received_prefixes'    : [
-        ('190.216.103.53/32', 32),
-        ('190.216.103.54/32', 32),
-        ('201.234.202.160/29', 29)
-    ],
-    'ipv6_received_prefixes'    : [
-        ('2803:c2c0::/32', 48)
-    ],
+    'ipv4_received_prefixes'    : "",
+    'ipv4_received_prefixes_through'    : "",
+    'ipv6_received_prefixes'    : "",
+    'ipv6_received_prefixes_through': "",
 # TODO: Agregar flags (override,remove_private, etc)
     'send_full_table':  False
 }
-bgp_routing['enabled'] = worksheet.cell_value(60, 1)
-bgp_routing['peer_as_number'] = int(worksheet.cell_value(61, 1))
+bgp_routing['enabled'] = worksheet.cell_value(62, 1)
+bgp_routing['peer_as_number'] = int(worksheet.cell_value(63, 1))
 # TODO no se como hacerlo
-#bgp_routing['ipv4_received_prefixes']
-#bgp_routing['ipv6_received_prefixes']
-bgp_routing['send_full_table'] = worksheet.cell_value(64, 1)
+bgp_routing['ipv4_received_prefixes'] = worksheet.cell_value(64, 1).split(',')
+bgp_routing['ipv4_received_prefixes_through'] = worksheet.cell_value(65, 1).split(',')
+bgp_routing['ipv6_received_prefixes'] = worksheet.cell_value(66, 1).split(',')
+bgp_routing['ipv6_received_prefixes_through'] = worksheet.cell_value(67, 1).split(',')
+bgp_routing['send_full_table'] = worksheet.cell_value(68, 1)
 
 # Crea la estructura de directorios y archivos
 
@@ -216,10 +186,52 @@ if pe_device['vendor'] == "NOKIA":
         ipv4_local_address, ipv4_neighbor_address, ipv4_netmask_lenght, ipv6_local_address, ipv6_neighbor_address,
         ipv6_netmask_lenght, qos_profile_id, total_bandwidth, peer_as_number, ipv4_received_prefixes,
         ipv6_received_prefixes, send_full_table, ipv4_lan_net, cpe_ipv4_address, ipv6_lan_net, static_routing, bgp_routing)"""
-        alu_adi_up_file(do_number, country, work_type,cid_number, customer_id, customer_name, cid_location, service_type, ies_id, iface_name, cvlan_id, svlan_id,
-        ipv4_local_address, ipv4_neighbor_address, ipv4_netmask_lenght, ipv6_local_address, ipv6_neighbor_address,
-        ipv6_netmask_lenght, qos_profile_id, total_bandwidth, peer_as_number, ipv4_received_prefixes,
-        ipv6_received_prefixes, send_full_table, ipv4_lan_net, cpe_ipv4_address, ipv6_lan_net, static_routing, bgp_routing)
+        """alu_adi_up_file(
+            work['do_number'],
+            circuit['country'],
+            work['work_type'],
+            circuit['cid_number'],
+            customer['id'],
+            customer['name'],
+            circuit['cid_location'],
+            work['service_type'],
+            circuit['ies_id'],
+            pe_device['iface_name'],
+            pe_l2['cvlan_id'],
+            pe_l2['svlan_id'],
+            ipv4_iface['local_address'],
+            ipv4_iface['neighbor_address'],
+            ipv4_iface['netmask_length'],
+            ipv6_iface['local_address'],
+            ipv6_iface['neighbor_address'],
+            ipv6_iface['netmask_length'],
+            qos['qos_profile_id'],
+            qos['new_bandwidth'],
+            bgp_routing['peer_as_number'],
+            bgp_routing['ipv4_received_prefixes'],
+            bgp_routing['ipv6_received_prefixes'],
+            bgp_routing['send_full_table'],
+            # Esto es para la estatica de la LAN. Agregarlo al excel
+            static_routing['ipv4_lan'],
+            cpe['loopback_ipv4_address'],
+            # Esto es para la estatica de la LAN. Agregarlo al excel
+            static_routing['ipv6_lan'],
+            static_routing['enabled'],
+            bgp_routing['enabled'])
+        """
+        alu_adi_up_file2(
+            customer,
+            work,
+            circuit,
+            pe_device,
+            pe_l2,
+            ipv4_iface,
+            ipv6_iface,
+            cpe,
+            nid,
+            qos,
+            static_routing,
+            bgp_routing)
     else:
         print("Solo esta hecho ADI para NOKIA")
 elif pe_device['vendor'] == "JUNIPER":

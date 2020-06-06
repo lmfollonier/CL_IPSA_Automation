@@ -1,5 +1,5 @@
 from Init.files_manager import *
-
+from jinja2 import Environment, FileSystemLoader
 
 def alu_adi_up_file(do_number,
                     country,
@@ -42,12 +42,12 @@ def alu_adi_up_file(do_number,
     iface_full: str = "\"" + iface_name + ":" + str(svlan_id) + "." + str(cvlan_id) + "\""
 
     # Pongo la jerarquia acá para que el comando no quede tan largo:
-    ies_path: str = "/configure service ies " + ies_id + " "
+    ies_path: str = "/configure service ies " + str(ies_id) + " "
 
     # TODO: Creación del cliente
 
     # Creación del IES
-    print(ies_path + "customer " + customer_id + " create", file=file)
+    print(ies_path + "customer " + str(customer_id) + " create", file=file)
     print(ies_path + "no shutdown", file=file)
     print("", file=file)
 
@@ -78,14 +78,14 @@ def alu_adi_up_file(do_number,
 
     # Static Routing
     if static_routing:
-        print("/configure router static-route-entry " + cpe_ipv4_address + " next-hop " + ipv4_neighbor_address,
+        print("/configure router static-route-entry " + str(cpe_ipv4_address) + " next-hop " + str(ipv4_neighbor_address),
               file=file)
         print(
-            "/configure router static-route-entry " + cpe_ipv4_address + " next-hop " + ipv4_neighbor_address + " no shutdown",
+            "/configure router static-route-entry " + str(cpe_ipv4_address) + " next-hop " + str(ipv4_neighbor_address) + " no shutdown",
             file=file)
-        print("/configure router static-route-entry " + ipv4_lan_net + " next-hop " + ipv4_neighbor_address, file=file)
+        print("/configure router static-route-entry " + str(ipv4_lan_net) + " next-hop " + str(ipv4_neighbor_address), file=file)
         print(
-            "/configure router static-route-entry " + ipv4_lan_net + " next-hop " + ipv4_neighbor_address + " no shutdown",
+            "/configure router static-route-entry " + str(ipv4_lan_net) + " next-hop " + str(ipv4_neighbor_address) + " no shutdown",
             file=file)
     # TODO: IPv6 Static
 
@@ -205,3 +205,67 @@ def alu_adi_up_file(do_number,
             print(
                 "/configure filter match-list ipv6-prefix-list \"cust-bgp-ipv6\" prefix " + ipv6_neighbor_address + "/128",
                 file=file)
+
+def alu_adi_up_file2(customer, work, circuit, pe_device, pe_l2, ipv4_iface,
+            ipv6_iface, cpe, nid, qos, static_routing, bgp_routing):
+
+    environment = {
+        'DO_NUMBER': work['do_number'],
+        'COUNTRY': circuit['country'],
+        'WORK_TYPE': work['work_type'],
+        'CID': circuit['cid_number'],
+        'CUSTOMER_ID': customer['id'],
+        'CUSTOMER_NAME': customer['name'],
+        'CID_LOCATION': circuit['cid_location'],
+        'SERVICE_TYPE': work['service_type'],
+        'IES_ID': circuit['ies_id'],
+
+        'IFACE_NAME': pe_device['iface_name'],
+        'DATA_UNIT': pe_device['subiface'],
+        'CVLAN_ID': pe_l2['cvlan_id'],
+        'SVLAN_ID': pe_l2['svlan_id'],
+
+        'IPV4_LOCAL_ADDR': ipv4_iface['local_address'],
+        'IPV4_NEIGHBOR_ADDR': ipv4_iface['neighbor_address'],
+        'IPV4_NETMASK_LENGTH': ipv4_iface['netmask_length'],
+        'IPV4_LAN_NET': ipv4_iface['lan_net'],
+
+        'IPV6_LOCAL_ADDRESS': ipv6_iface['local_address'],
+        'IPV6_NEIGHBOR_ADDRESS': ipv6_iface['neighbor_address'],
+        'IPV6_LAN_NET': ipv6_iface['lan_net'],
+        'IPV6_NETMASK_LENGHT': ipv6_iface['netmask_length'],
+
+        'QOS_ID': qos['qos_profile_id'],
+        'QOS_PROFILE_DESCRIPTION': qos['qos_profile_description'],
+        'BW_M': int(qos['new_bandwidth'] / 1024),
+        'TOTAL_BW': qos['new_bandwidth'],
+        'TOTAL_BS': qos['new_burst_size'],
+        'EF_BW': qos['new_bandwidth_ef'],
+        'EF_BS': qos['new_burst_size_ef'],
+        'EF_DE_BW': qos['new_bandwidth_ef_de'],
+        'EF_DE_BS': qos['new_burst_size_ef_de'],
+
+        'BGP_ROUTING': bgp_routing['enabled'],
+        'PEER_AS_NUMBER': bgp_routing['peer_as_number'],
+        'IPV4_RECEIVED_PREFIXES': bgp_routing['ipv4_received_prefixes'],
+        'IPV4_RECEIVED_THROUGH': bgp_routing['ipv4_received_prefixes_through'],
+        'IPV6_RECEIVED_PREFIXES': bgp_routing['ipv6_received_prefixes'],
+        'IPV6_RECEIVED_THROUGH': bgp_routing['ipv6_received_prefixes_through'],
+        'SEND_FULL_TABLE': bgp_routing['send_full_table'],
+
+        'STATIC_ROUTING': static_routing['enabled'],
+        'STATIC_TAG': static_routing['tag'],
+        'CPE_IPV4_ADDRESS': cpe['loopback_ipv4_address'][0],
+    }
+
+
+    file = get_pe_script(work['do_number'], work['work_type'], circuit['country'])
+
+    loader = FileSystemLoader("/home/martin/PycharmProjects/CL_IPSA_Automation/Jinja_Templates")
+    env = Environment(loader = loader, trim_blocks=True, lstrip_blocks=True)
+    template = env.get_template('alu_adi_up.j2')
+
+    result = template.render(environment)
+
+    with open(file.name, 'a') as pe_script:
+        pe_script.write(result)
