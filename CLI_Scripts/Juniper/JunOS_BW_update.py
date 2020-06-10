@@ -58,7 +58,7 @@ def junos_bw_update_file(do_number,
     # with open(file.name, 'w') as pe_script:
     #    pe_script.write(result)
 
-def junos_bw_update_file2(pe_device_data, qos_data):
+def junos_bw_update_file2(pe_device_data, qos_data, work, circuit):
 
     environment = {
         "OLD_BW"        : qos_data['old_bandwidth'],
@@ -72,7 +72,7 @@ def junos_bw_update_file2(pe_device_data, qos_data):
         "DATA_UNIT"     : pe_device_data['subiface']
     }
 
-    # file = get_pe_script(do_number, work_type, country)
+    file = get_pe_script(work['do_number'], work['work_type'], circuit['country'])
 
     loader = FileSystemLoader("/home/martin/PycharmProjects/CL_IPSA_Automation/Jinja_Templates")
     env = Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
@@ -82,5 +82,5 @@ def junos_bw_update_file2(pe_device_data, qos_data):
 
     print(result)
 
-    # with open(file.name, 'w') as pe_script:
-    #    pe_script.write(result)
+    with open(file.name, 'w') as pe_script:
+        pe_script.write(result)

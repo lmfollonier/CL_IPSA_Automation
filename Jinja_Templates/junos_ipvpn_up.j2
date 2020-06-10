@@ -36,6 +36,9 @@ set routing-instances {{DATA_VRF}} interface {{IFACE_NAME}}.{{DATA_UNIT}}
     {# Que onda este tag?? #}
     set routing-instances {{DATA_VRF}} routing-options static route {{CPE_IPV4_ADDRESS}}/32 tag {{STATIC_TAG}}
 {% endif %}
+{% if STATIC_ROUTING and IPv4_LAN_NET %}
+    set routing-instances {{DATA_VRF}} routing-options static route {{IPv4_LAN_NET}} next-hop {{IPV4_NEIGHBOR_ADDRESS}}
+{% endif %}
 
 {% if BGP_ROUTING %}
     set routing-instances {{DATA_VRF}} protocols bgp group external type external
@@ -72,10 +75,10 @@ set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet address {{IPV4_LOCA
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet6 address {{IPV6_LOCAL_ADDRESS}}/{{IPV6_NETMASK_LENGHT}}
 {% endif %}
 
-set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o scheduler-map GX-CUST-SCHEDULER-MAP-I
-set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o shaping-rate {{BW_TOTAL}}
+set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TOTAL_BW}}-o scheduler-map GX-CUST-SCHEDULER-MAP-I
+set class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TOTAL_BW}}-o shaping-rate {{TOTAL_BW}}K
 
-set class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} output-traffic-control-profile {{IFACE_NAME}}.{{DATA_UNIT}}-{{TCP_NAME}}-o
+set class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} output-traffic-control-profile {{IFACE_NAME}}.{{DATA_UNIT}}-{{TOTAL_BW}}-o
 set class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} rewrite-rules ieee-802.1 CUST-PSR->EX
 
 set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i term EF_DSCP from dscp 46
@@ -126,22 +129,24 @@ set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term VPN-BE 
 set firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e term BE then count BE.tx-{{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
 
 set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in logical-interface-policer
-set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in if-exceeding bandwidth-limit {{TOTAL_BW}}
-set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in if-exceeding burst-size-limit {{TOTAL_BS}}
+set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in if-exceeding bandwidth-limit {{TOTAL_BW}}K
+set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in if-exceeding burst-size-limit {{TOTAL_BS}}K
 set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in then discard
 
 {% if EF_BW %}
-    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i if-exceeding bandwidth-limit {{EF_BW}}
-    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i if-exceeding burst-size-limit {{EF_BS}}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i if-exceeding bandwidth-limit {{EF_BW}}K
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i if-exceeding burst-size-limit {{EF_BS}}K
     set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i then discard
 {% endif %}
 
 {% if EF_DE_BW %}
-    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i if-exceeding bandwidth-limit {{EF_DE_BW}}
-    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i if-exceeding burst-size-limit {{EF_DE_BS}}
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i if-exceeding bandwidth-limit {{EF_DE_BW}}K
+    set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i if-exceeding burst-size-limit {{EF_DE_BS}}K
     set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i then discard
 {% endif %}
 
+
+{#
 {% for i in range(0,IPV4_RECEIVED_PREFIXES|length)  %}
 {{IPV4_RECEIVED_PREFIXES[i]}} through {{IPV4_RECEIVED_THROUGH[i]}}
 {% endfor %}
@@ -149,3 +154,4 @@ set firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in then discard
 {% for i in range(0,IPV6_RECEIVED_PREFIXES|length)  %}
 {{IPV6_RECEIVED_PREFIXES[i]}} through {{IPV6_RECEIVED_THROUGH[i]}}
 {% endfor %}
+#}

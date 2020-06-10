@@ -1,3 +1,10 @@
+show configuration interface {{DATA_IFACE}}.{{DATA_UNIT}} | no-more
+
+show configuration | display set | match {{DATA_IFACE}}.{{DATA_UNIT}} | no-more
+
+show configuration class-of-service interfaces {{DATA_IFACE}} unit {{DATA_UNIT}} | no-more
+
+
 
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}-in if-exceeding bandwidth-limit {{NEW_BW}}K
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}-in if-exceeding burst-size-limit {{NEW_BS}}K

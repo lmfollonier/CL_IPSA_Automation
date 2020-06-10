@@ -90,6 +90,6 @@ def get_pe_script(do_number, work_type, country):
     working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
     scripts_dir = working_dir + '03-SCRIPTS/'
     pe_script = scripts_dir + str(do_number) + '-PE-SCRIPT.txt'
-    file = open(pe_script, 'a')
-    file.write('############################################################################')
+    file = open(pe_script, 'w')
+    #file.write('############################################################################')
     return (file)

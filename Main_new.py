@@ -1,12 +1,15 @@
-from ipaddress import ip_network, ip_address
-from typing import Dict
+import sys
+from ipaddress import ip_network
+
 
 from CLI_Scripts.ALU.ALU_ADI_up_file import alu_adi_up_file, alu_adi_up_file2
+from CLI_Scripts.ALU.ALU_BW_update_file import alu_adi_bw_update
 from CLI_Scripts.Juniper.JunOS_BW_update import junos_bw_update_file2
+from CLI_Scripts.Juniper.JunOS_IPVPN_down_file import junos_ipvpn_down_file
 from CLI_Scripts.Juniper.JunOS_IPVPN_up_file import junos_ipvpn_up_file2
 from Init.files_manager import init_do_files
+import xlrd, xlsxwriter
 
-import xlrd
 workbook = xlrd.open_workbook('/home/martin/Downloads/do.xlsx')
 worksheet = workbook.sheet_by_name('VARS')
 
@@ -34,19 +37,6 @@ work['do_number'] = int(worksheet.cell_value(5,1))
 work['work_type'] = worksheet.cell_value(6, 1)
 work['service_type'] = worksheet.cell_value(7, 1)
 
-circuit = {
-    'country'       : 'ECUADOR',
-    'cid_number'    : 500073072,
-    'cid_location'  : 'TLP GYE',
-    'ies_id'        : 28715,
-    'siebel_id'     : ''
-}
-circuit['country'] = worksheet.cell_value(10, 1)
-circuit['cid_number'] = int(worksheet.cell_value(11, 1))
-circuit['cid_location'] = worksheet.cell_value(12, 1)
-circuit['ies_id'] = int(worksheet.cell_value(13, 1))
-circuit['siebel_id'] = worksheet.cell_value(14, 1)
-
 pe_device = {
     'vendor'    : 'JUNIPER',
     'hostname'  : '',
@@ -64,6 +54,38 @@ pe_l2 = {
     }
 pe_l2['cvlan_id']  = int(worksheet.cell_value(23, 1))
 pe_l2['svlan_id']  = int(worksheet.cell_value(24, 1))
+
+circuit = {
+    'country'       : 'ECUADOR',
+    'cid_number'    : 500073072,
+    'cid_location'  : 'TLP GYE',
+    'ies_id'        : 28715,
+    'siebel_id'     : ''
+}
+circuit['country'] = worksheet.cell_value(10, 1)
+circuit['cid_number'] = int(worksheet.cell_value(11, 1))
+circuit['cid_location'] = worksheet.cell_value(12, 1)
+circuit['ies_id'] = int(worksheet.cell_value(13, 1))
+circuit['siebel_id'] = worksheet.cell_value(14, 1)
+
+if pe_device['vendor'] == "NOKIA":
+    ies_worksheet_name = pe_device['hostname'] + "-ies-table"
+    ies_worksheet = workbook.sheet_by_name(ies_worksheet_name)
+
+    for row_num in range(0, ies_worksheet.nrows):
+        row_value = ies_worksheet.cell_value(row_num,1)
+        if row_value == (pe_device['iface_name'] + ":" + str(pe_l2['svlan_id']) + "." + str(pe_l2['cvlan_id']) ):
+            print(int(ies_worksheet.cell_value(row_num,0)))
+            circuit['ies_id'] = int(ies_worksheet.cell_value(row_num, 0))
+            break
+        else:
+            circuit['ies_id'] = "no existe"
+            #circuit['new_ies_profile_id'] = int(ies_worksheet.cell_value(row_num, 0)) + 1
+
+    if circuit['ies_id'] == "no existe":
+        print('verificar ies con: admin display-config | match context all ' + pe_device['iface_name'] + ":" + str(pe_l2['svlan_id']) + "." + str(pe_l2['cvlan_id']))
+        sys.exit()
+
 
 ipv4_iface = {
     'wan_net'           : '',
@@ -84,11 +106,11 @@ ipv6_iface = {
     'lan_net'           : '20005::0/10',
     'neighbor_address'  :  '',
 }
-
-ipv6_iface['wan_net'] = ip_network(worksheet.cell_value(30, 1))
-ipv6_iface['local_address'] = (ipv6_iface['wan_net'].network_address + 1).compressed
-ipv6_iface['neighbor_address'] = (ipv6_iface['wan_net'].network_address + 2).compressed
-ipv6_iface['netmask_length'] = ipv6_iface['wan_net'].prefixlen
+if worksheet.cell_value(30, 1):
+    ipv6_iface['wan_net'] = ip_network(worksheet.cell_value(30, 1))
+    ipv6_iface['local_address'] = (ipv6_iface['wan_net'].network_address + 1).compressed
+    ipv6_iface['neighbor_address'] = (ipv6_iface['wan_net'].network_address + 2).compressed
+    ipv6_iface['netmask_length'] = ipv6_iface['wan_net'].prefixlen
 
 routing_instance = {
     'name'      : '',
@@ -122,7 +144,8 @@ nid['ipv4_address'] = worksheet.cell_value(46, 1)
 
 qos = {
     'qos_profile_id'                : 146,
-    'qos_profile_description'       : 'Esto es solo por si hay que crearlo',
+    'new_qos_profile_id'            : '',
+    'qos_profile_description'       : '',
     'old_bandwidth'                 : 3072,
     'new_bandwidth'                 : 1536,
     'new_burst_size'                : '',
@@ -133,7 +156,7 @@ qos = {
     'new_bandwidth_ef_de'           : '',
     'new_burst_size_ef_de'          : ''
 }
-qos['qos_profile_id'] = int(worksheet.cell_value(49, 1))
+
 qos['old_bandwidth'] = int(worksheet.cell_value(50, 1))
 qos['new_bandwidth'] = int(worksheet.cell_value(51, 1))
 qos['new_bandwidth_ef_percent'] = int(worksheet.cell_value(52, 1))
@@ -143,6 +166,35 @@ qos['new_bandwidth_ef'] = int(qos['new_bandwidth'] * qos['new_bandwidth_ef_perce
 qos['new_burst_size_ef'] = int(qos['new_bandwidth_ef'] * 0.0375)
 qos['new_bandwidth_ef_de'] = int(qos['new_bandwidth'] * qos['new_bandwidth_ef_de_percent'] / 100)
 qos['new_burst_size_ef_de'] = int(qos['new_bandwidth_ef_de'] * 0.0375)
+
+if pe_device['vendor'] == "NOKIA":
+    qos_worksheet_name = pe_device['hostname'] + "-qos-table"
+    qos_worksheet = workbook.sheet_by_name(qos_worksheet_name)
+
+    for row_num in range(0, qos_worksheet.nrows):
+        row_value = int(qos_worksheet.cell_value(row_num,2))
+        if row_value == int(qos['new_bandwidth']):
+            print(int(qos_worksheet.cell_value(row_num,0)))
+            qos['qos_profile_id'] = int(qos_worksheet.cell_value(row_num, 0))
+            break
+        else:
+            qos['qos_profile_id'] = "no existe"
+            qos['new_qos_profile_id'] = int(qos_worksheet.cell_value(row_num, 0)) + 1
+
+    if qos['qos_profile_id'] == "no existe":
+        if qos['new_bandwidth'] >= 1000000:
+            qos_desc_bw = round(qos['new_bandwidth']/1000000,1)
+            qos_desc_post = str(qos_desc_bw) + "G"
+            qos['qos_profile_description'] = 'CUSTOMER-' + qos_desc_post
+        elif qos['new_bandwidth'] >= 1000:
+            qos_desc_bw = int(qos['new_bandwidth'] / 1000)
+            qos_desc_post = str(qos_desc_bw) + "M"
+            qos['qos_profile_description'] = 'CUSTOMER-' + qos_desc_post
+        else:
+            qos_desc = str(qos['new_bandwidth']) + "K"
+            qos['qos_profile_description'] = 'CUSTOMER-' + qos_desc_post
+        print('No existe el qos_profile hay que crear el qos profile: ' + qos['qos_profile_description'] + ', id: ' + str(qos['new_qos_profile_id']) + " con el BW:" + str(qos['new_bandwidth']))
+        sys.exit()
 
 # Genera estaticas a la loopback del CPE, y a la LAN
 static_routing = {
@@ -181,7 +233,7 @@ init_do_files(work['do_number'], work['work_type'], circuit['country'])
 
 
 if pe_device['vendor'] == "NOKIA":
-    if work['service_type'] == "ADI" or work['service_type'] == "DIA":
+    if (work['service_type'] == "ADI" or work['service_type'] == "DIA") and work['work_type'] == "ALTA":
         """alu_adi_up(cid_number, customer_id, customer_name, cid_location, service_type, ies_id, iface_name, cvlan_id, svlan_id,
         ipv4_local_address, ipv4_neighbor_address, ipv4_netmask_lenght, ipv6_local_address, ipv6_neighbor_address,
         ipv6_netmask_lenght, qos_profile_id, total_bandwidth, peer_as_number, ipv4_received_prefixes,
@@ -232,8 +284,10 @@ if pe_device['vendor'] == "NOKIA":
             qos,
             static_routing,
             bgp_routing)
+    elif work['work_type'] == "UPGRADE" or work['work_type'] == "DOWNGRADE":
+        alu_adi_bw_update(work, pe_device, pe_l2, circuit, qos)
     else:
-        print("Solo esta hecho ADI para NOKIA")
+        print("Solo esta hecho ADI, y cambio de BW para NOKIA")
 elif pe_device['vendor'] == "JUNIPER":
     if work['service_type'] == "IPVPN" and work['work_type'] == "ALTA":
         """junos_ipvpn_up_file(do_number, country, work_type,cid_number, customer_id, customer_name, cid_location, service_type, ies_id, iface_name, cvlan_id, svlan_id,
@@ -244,10 +298,13 @@ elif pe_device['vendor'] == "JUNIPER":
         junos_ipvpn_up_file2(
             customer, work, circuit, pe_device, pe_l2, ipv4_iface,
             ipv6_iface, cpe, nid, qos, static_routing, bgp_routing, routing_instance)
-
     elif work['work_type'] == "DOWNGRADE" or work['work_type'] == "UPGRADE":
-        junos_bw_update_file2(pe_device, qos)
+        junos_bw_update_file2(pe_device, qos, work, circuit)
+    elif work['work_type'] == "BAJA":
+        junos_ipvpn_down_file(
+            customer, work, circuit, pe_device, pe_l2, ipv4_iface,
+            ipv6_iface, cpe, nid, qos, static_routing, bgp_routing, routing_instance)
     else:
-        print("Solo esta hecho IPVPN UP, y BW_UPDATE para JUNIPER")
+        print("Solo esta hecho IPVPN UP, BW_UPDATE y BAJA para JUNIPER")
 else:
     print("Eso todavía no esta hecho...")

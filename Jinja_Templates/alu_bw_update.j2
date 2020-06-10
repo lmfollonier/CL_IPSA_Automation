@@ -1,0 +1,24 @@
+#### VERIFICACIONES ###
+admin display-config | match context all "service ies {{IES_ID}}"
+admin display-config | match context all {{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}
+configure qos sap-ingress {{QOS_ID}}
+info
+
+
+### CONFIG ###
+
+
+{# ### CREACION DEl PERFIL DE QOS ### #}
+
+{% if QOS_ID == "no existe" %}
+    /configure qos sap-ingress {{NEW_QOS_ID}} create
+    /configure qos sap-ingress {{NEW_QOS_ID}} description {{QOS_PROFILE_DESCRIPTION}}
+    /configure qos sap-ingress {{NEW_QOS_ID}} queue 1 create
+    /configure qos sap-ingress {{NEW_QOS_ID}} queue 1 rate {{BW_K}}
+    /configure qos sap-ingress {{NEW_QOS_ID}} queue 11 multipoint create
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{NEW_QOS_ID}}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" egress agg-rate rate {{TOTAL_BW}}
+ {% else %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{QOS_ID}}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" egress agg-rate rate {{TOTAL_BW}}
+{% endif %}
