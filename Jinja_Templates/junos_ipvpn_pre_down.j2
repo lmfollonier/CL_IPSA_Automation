@@ -1,0 +1,43 @@
+# VERIFICACIONES
+
+show configuration interfaces {{IFACE_NAME}}.{{DATA_UNIT}}
+show configuration routing instances {{DATA_VRF}}
+show configuration interfaces {{IFACE_NAME}}.{{DATA_UNIT}} | match {{CID}} | no-more
+show configuration interfaces {{IFACE_NAME}}.{{DATA_UNIT}} | match {{CUSTOMER_NAME}} | no-more
+show configuration interfaces {{IFACE_NAME}}.{{DATA_UNIT}} | match {{CID_LOCATION}} | no-more
+show configuration routing instances {{DATA_VRF}} | match interface
+show configuration | display set | match {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
+show configuration | display set | match {{IPV4_NEIGHBOR_ADDRESS}} | no-more
+show configuration | display set | match {{PEER_AS_NUMBER}} | no-more
+
+## SI ES LA UNICA INTERFAZ EN LA VRF ###
+
+delete policy-options policy-statement {{DATA_VRF}}-export
+delete policy-options policy-statement {{DATA_VRF}}-import
+delete policy-options community RT-{{DATA_VRF}}_export
+delete policy-options community RT-{{DATA_VRF}}_import
+delete routing-instances {{DATA_VRF}}
+
+## SI NO ###
+delete routing-instances {{DATA_VRF}} interface {{IFACE_NAME}}.{{DATA_UNIT}}
+delete routing-instances {{DATA_VRF}} routing-options static route {{CPE_IPV4_ADDRESS}}/32
+delete routing-instances {{DATA_VRF}} routing-options static route {{IPv4_LAN_NET}}
+
+## PROBABLEMENTE NO EXISTA
+{# delete routing-instances {{DATA_VRF}} routing-options static route {{IPv6_LAN_NET}} #}
+
+delete routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV4_NEIGHBOR_ADDRESS}}
+{# delete routing-instances {{DATA_VRF}} protocols bgp group external neighbor {{IPV6_NEIGHBOR_ADDRESS}} #}
+
+## SIEMPRE
+delete interfaces {{IFACE_NAME}} unit {{DATA_UNIT}}
+delete class-of-service traffic-control-profiles {{IFACE_NAME}}.{{DATA_UNIT}}-{{TOTAL_BW}}-o
+delete class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}}
+delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in
+delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i
+delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i
+delete firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
+delete firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
+
+# VERIFICAR COMO ES EL NOMBRE DE LAS PREFIX LISTS
+

@@ -13,7 +13,7 @@ def init_do_files(do_number, work_type, country):
     pe_pretask_conf = pretask_dir + str(do_number) + '-PE-PRETASK-CONFIG.txt'
     pe_pretask_oper = pretask_dir + str(do_number) + '-PE-PRETASK-OPER.txt'
     um_pretask_conf = pretask_dir + str(do_number) + '-UM-PRETASK-CONFIG.txt'
-    um_pretask_oper = pretask_dir + str(do_number) + '-UM-PRETAST-OPER.txt'
+    um_pretask_oper = pretask_dir + str(do_number) + '-UM-PRETASK-OPER.txt'
     scripts_dir = working_dir + '03-SCRIPTS/'
     pe_script = scripts_dir + str(do_number) + '-PE-SCRIPT.txt'
     um_script = scripts_dir + str(do_number) + '-UM-SCRIPT.txt'
@@ -35,26 +35,32 @@ def init_do_files(do_number, work_type, country):
             mkdir(working_dir)
         except OSError as error:
             print(error)
+            return
         try:
             mkdir(backups_dir)
         except OSError as error:
             print(error)
+            return
         try:
             mkdir(pretask_dir)
         except OSError as error:
             print(error)
+            return
         try:
             mkdir(scripts_dir)
         except OSError as error:
             print(error)
+            return
         try:
             mkdir(postask_dir)
         except OSError as error:
             print(error)
+            return
         try:
             mkdir(diff_dir)
         except OSError as error:
             print(error)
+            return
 
         open(pe_backup_file, 'a')
         open(um_backup_file, 'a')
@@ -81,7 +87,6 @@ def init_do_files(do_number, work_type, country):
 
     return
 
-
 def get_pe_script(do_number, work_type, country):
     # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
     base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
@@ -90,6 +95,88 @@ def get_pe_script(do_number, work_type, country):
     working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
     scripts_dir = working_dir + '03-SCRIPTS/'
     pe_script = scripts_dir + str(do_number) + '-PE-SCRIPT.txt'
+    file = open(pe_script, 'w')
+    #file.write('############################################################################')
+    return (file)
+
+def get_um_script(do_number, work_type, country):
+    # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
+    base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
+    # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
+    work_type += 'S'
+    working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
+    scripts_dir = working_dir + '03-SCRIPTS/'
+    pe_script = scripts_dir + str(do_number) + '-UM-SCRIPT.txt'
+    file = open(pe_script, 'w')
+    #file.write('############################################################################')
+    return (file)
+
+def get_pe_pretask_oper(do_number, work_type, country):
+    # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
+    base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
+    # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
+    work_type += 'S'
+    working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
+    scripts_dir = working_dir + '02-PRETASK/'
+    pe_script = scripts_dir + str(do_number) + '-PE-PRETASK-OPER.txt'
+    file = open(pe_script, 'w')
+    #file.write('############################################################################')
+    return (file)
+
+def get_um_pretask_oper(do_number, work_type, country):
+    # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
+    base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
+    # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
+    work_type += 'S'
+    working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
+    scripts_dir = working_dir + '02-PRETASK/'
+    pe_script = scripts_dir + str(do_number) + '-UM-PRETASK-OPER.txt'
+    file = open(pe_script, 'w')
+    #file.write('############################################################################')
+    return (file)
+
+def get_pe_postask_oper(do_number, work_type, country):
+    # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
+    base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
+    # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
+    work_type += 'S'
+    working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
+    scripts_dir = working_dir + '04-POSTASK/'
+    pe_script = scripts_dir + str(do_number) + '-PE-POSTASK-OPER.txt'
+    file = open(pe_script, 'w')
+    #file.write('############################################################################')
+    return (file)
+
+def get_um_postask_oper(do_number, work_type, country):
+    # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
+    base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
+    # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
+    work_type += 'S'
+    working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
+    scripts_dir = working_dir + '04-POSTASK/'
+    pe_script = scripts_dir + str(do_number) + '-UM-POSTASK-OPER.txt'
+    file = open(pe_script, 'w')
+    #file.write('############################################################################')
+    return (file)
+
+def get_do_info(do_number, work_type, country):
+    # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
+    base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
+    # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
+    work_type += 'S'
+    working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
+    pe_script = working_dir + str(do_number) + '-DO-INFO.txt'
+    file = open(pe_script, 'a')
+    #file.write('############################################################################')
+    return (file)
+
+def get_do_cierre(do_number, work_type, country):
+    # Definimos los directorios de trabajo. TODO: ver que onda ese Path de Feli
+    base_dir = '/home/martin/Proyectos/Iquall/CenturyLink/DOs/'
+    # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
+    work_type += 'S'
+    working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
+    pe_script = working_dir + str(do_number) + '-DO-INFO-CIERRE.txt'
     file = open(pe_script, 'w')
     #file.write('############################################################################')
     return (file)

@@ -1,0 +1,21 @@
+
+set interfaces {{ M1 IFACE }} unit {{METRO 1 UNIT}} description {"CUSTOMER: IMPS-VPLS: PIOVESAN AMPUERO EMILIO (500186314) [Metro1.0 to Metro 2.0 - VLAN-CCC]"}
+set interfaces {{ M1 IFACE }} unit {{METRO 1 UNIT}} encapsulation vlan-ccc
+set interfaces {{ M1 IFACE }} unit {{METRO 1 UNIT}} vlan-tags outer {{ SVLAN M1 }}
+set interfaces {{ M1 IFACE }} unit {{METRO 1 UNIT}} vlan-tags inner {{ CVLAN }}
+set interfaces {{ M1 IFACE }} unit {{METRO 1 UNIT}} input-vlan-map pop-pop
+set interfaces {{ M1 IFACE }} unit {{METRO 1 UNIT}} output-vlan-map push-push
+
+
+
+set interfaces {{ METRO 2 IFACE }} unit {{METRO 2 UNIT}} description "CUSTOMER: IMPS-VPLS: PIOVESAN AMPUERO EMILIO (500186314) [Metro1.0 to Metro 2.0 - VLAN-CCC]"
+set interfaces {{ METRO 2 IFACE }} unit {{METRO 2 UNIT}} encapsulation vlan-ccc
+set interfaces {{ METRO 2 IFACE }} unit {{METRO 2 UNIT}} vlan-tags outer {{ SVLAN M2}}
+set interfaces {{ METRO 2 IFACE }} unit {{METRO 2 UNIT}} vlan-tags inner {{ CVLAN }}
+set interfaces {{ METRO 2 IFACE }} unit {{METRO 2 UNIT}} input-vlan-map pop-pop
+set interfaces {{ METRO 2 IFACE }} unit {{METRO 2 UNIT}} output-vlan-map push-push
+
+
+set protocols l2circuit local-switching interface {{ METRO 2 IFACE }}.{{METRO 2 UNIT}} end-interface interface {{ M1 IFACE }}.{{METRO 1 UNIT}}
+set protocols l2circuit local-switching interface {{ METRO 2 IFACE }}.{{METRO 2 UNIT}} description METRO2.0-GYE-to-MESA4.TGY1
+set protocols l2circuit local-switching interface {{ METRO 2 IFACE }}.{{METRO 2 UNIT}} ignore-mtu-mismatch

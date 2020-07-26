@@ -1,0 +1,11 @@
+
+/configure router static-route-entry {{IPV4_LAN_NET}} next-hop {{IPV4_NEIGHBOR_ADDR}} shutdown
+/configure router static-route-entry {{IPV4_LAN_NET}} no next-hop {{IPV4_NEIGHBOR_ADDR}}
+/configure router no static-route-entry {{IPV4_LAN_NET}}
+
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap {{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}} shutdown
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" no sap {{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" shutdown
+/configure service ies {{IES_ID}} no interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}"
+/configure service ies {{IES_ID}} shutdown
+/configure service no ies {{IES_ID}}

@@ -68,6 +68,12 @@ def junos_bw_update_file2(pe_device_data, qos_data, work, circuit):
         "NEW_EF_BS"     : qos_data['new_burst_size_ef'],
         "NEW_EF_DE_BW"  : qos_data['new_bandwidth_ef_de'],
         "NEW_EF_DE_BS"  : qos_data['new_burst_size_ef_de'],
+        'AF_BW'         : qos_data['new_bandwidth_af'],
+        'AF_BS'         : qos_data['new_burst_size_af'],
+        'AF_DE_BW'      : qos_data['new_bandwidth_af_de'],
+        'AF_DE_BS'      : qos_data['new_burst_size_af_de'],
+        'VPN_BE_BW'     : qos_data['new_bandwidth_vpn_be'],
+        'VPN_BE_BS'     : qos_data['new_burst_size_vpn_be'],
         "DATA_IFACE"    : pe_device_data['iface_name'],
         "DATA_UNIT"     : pe_device_data['subiface']
     }

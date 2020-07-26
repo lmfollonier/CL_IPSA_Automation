@@ -1,8 +1,8 @@
 show configuration interface {{DATA_IFACE}}.{{DATA_UNIT}} | no-more
 
-show configuration class-of-service interfaces {{DATA_IFACE}} unit {{DATA_UNIT}} | no-more
-
 show configuration | display set | match {{DATA_IFACE}}.{{DATA_UNIT}} | no-more
+
+show configuration class-of-service interfaces {{DATA_IFACE}} unit {{DATA_UNIT}} | no-more
 
 
 
@@ -19,24 +19,6 @@ set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.EF-DE-i if-exceeding bandwidth
 set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.EF-DE-i if-exceeding burst-size-limit {{NEW_EF_DE_BS}}K
 {% endif  %}
 
-{% if AF_BW %}
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.AF-i if-exceeding bandwidth-limit {{AF_BW}}K
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.AF-i if-exceeding burst-size-limit {{AF_BS}}K
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.AF-i then discard
-{% endif %}
-
-{% if AF_DE_BW %}
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.AF-DE-i if-exceeding bandwidth-limit {{AF_DE_BW}}K
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.AF-DE-i if-exceeding burst-size-limit {{AF_DE_BS}}K
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.AF-DE-i then discard
-{% endif %}
-
-{% if VPN_BE_BW %}
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.VPN-BE-i if-exceeding bandwidth-limit {{VPN_BE_BW}}K
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.VPN-BE-i if-exceeding burst-size-limit {{VPN_BE_BS}}K
-    set firewall policer {{DATA_IFACE}}.{{DATA_UNIT}}.VPN-BE-i then discard
-{% endif %}
-
 set class-of-service traffic-control-profiles {{DATA_IFACE}}.{{DATA_UNIT}}-{{OLD_BW}}-o scheduler-map GX-CUST-SCHEDULER-MAP-I
 set class-of-service traffic-control-profiles {{DATA_IFACE}}.{{DATA_UNIT}}-{{OLD_BW}}-o shaping-rate {{NEW_BW}}K
 delete class-of-service traffic-control-profiles {{DATA_IFACE}}.{{DATA_UNIT}}-{{OLD_BW}}-o delay-buffer-rate 
@@ -44,4 +26,3 @@ delete class-of-service traffic-control-profiles {{DATA_IFACE}}.{{DATA_UNIT}}-{{
 rename class-of-service traffic-control-profiles {{DATA_IFACE}}.{{DATA_UNIT}}-{{OLD_BW}}-o to {{DATA_IFACE}}.{{DATA_UNIT}}-{{NEW_BW}}-o
 
 set class-of-service interfaces {{DATA_IFACE}} unit {{DATA_UNIT}} output-traffic-control-profile {{DATA_IFACE}}.{{DATA_UNIT}}-{{NEW_BW}}-o
-set class-of-service interfaces {{DATA_IFACE}} unit {{DATA_UNIT}} rewrite-rules ieee-802.1 CUST-PSR->EX

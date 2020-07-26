@@ -1,0 +1,19 @@
+admin  display-config | match context all "customer {{CUSTOMER_ID}}"
+
+admin  display-config | match context all {{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}
+
+admin  display-config | match context all {{IPV4_LOCAL_ADDR}}
+
+admin  display-config | match context all "sap-ingress {{QOS_ID}}"
+
+admin  display-config | match context all {{IPV4_NEIGHBOR_ADDR}}
+
+show router route-table {{IPV4_NEIGHBOR_ADDR}}
+
+show router route-table {{IPV4_LAN_NET}}
+
+ping {{IPV4_NEIGHBOR_ADDR}}
+
+{% if BGP_ROUTING %}
+show router bgp neighbor {{IPV4_NEIGHBOR_ADDR}}
+{% endif %}

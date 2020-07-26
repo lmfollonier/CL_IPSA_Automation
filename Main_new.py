@@ -1,17 +1,19 @@
+import os
 import sys
 from ipaddress import ip_network
 
-
-from CLI_Scripts.ALU.ALU_ADI_up_file import alu_adi_up_file, alu_adi_up_file2
+from CLI_Scripts.ALU.ALU_ADI_up_file import alu_adi_up_file2
 from CLI_Scripts.ALU.ALU_BW_update_file import alu_adi_bw_update
+from CLI_Scripts.Juniper.JunOS_ADI_UP import junos_adi_up
 from CLI_Scripts.Juniper.JunOS_BW_update import junos_bw_update_file2
 from CLI_Scripts.Juniper.JunOS_IPVPN_down_file import junos_ipvpn_down_file
 from CLI_Scripts.Juniper.JunOS_IPVPN_up_file import junos_ipvpn_up_file2
-from Init.files_manager import init_do_files
+from Init.files_manager import init_do_files, get_do_info
 import xlrd, xlsxwriter
 
 workbook = xlrd.open_workbook('/home/martin/Downloads/do.xlsx')
 worksheet = workbook.sheet_by_name('VARS')
+worksheet_do_info = workbook.sheet_by_name('do-info')
 
 """
 Datos iniciales necesarios para generar la estructura de archivos de la Dokuorder
@@ -37,6 +39,27 @@ work['do_number'] = int(worksheet.cell_value(5,1))
 work['work_type'] = worksheet.cell_value(6, 1)
 work['service_type'] = worksheet.cell_value(7, 1)
 
+circuit = {
+    'country'       : 'ECUADOR',
+    'cid_number'    : 500073072,
+    'cid_location'  : 'TLP GYE',
+    'ies_id'        : 28715,
+    'siebel_id'     : ''
+}
+circuit['country'] = worksheet.cell_value(10, 1)
+circuit['cid_number'] = int(worksheet.cell_value(11, 1))
+circuit['cid_location'] = worksheet.cell_value(12, 1)
+circuit['ies_id'] = int(worksheet.cell_value(13, 1))
+circuit['siebel_id'] = worksheet.cell_value(14, 1)
+
+# Crea la estructura de directorios y archivos
+init_do_files(work['do_number'], work['work_type'], circuit['country'])
+do_info = worksheet_do_info.cell_value(0, 0)
+file = get_do_info(work['do_number'], work['work_type'], circuit['country'])
+if os.stat(file.name).st_size == 0:
+    with open(file.name, 'w') as do_info_file:
+        do_info_file.write(do_info)
+
 pe_device = {
     'vendor'    : 'JUNIPER',
     'hostname'  : '',
@@ -55,20 +78,9 @@ pe_l2 = {
 pe_l2['cvlan_id']  = int(worksheet.cell_value(23, 1))
 pe_l2['svlan_id']  = int(worksheet.cell_value(24, 1))
 
-circuit = {
-    'country'       : 'ECUADOR',
-    'cid_number'    : 500073072,
-    'cid_location'  : 'TLP GYE',
-    'ies_id'        : 28715,
-    'siebel_id'     : ''
-}
-circuit['country'] = worksheet.cell_value(10, 1)
-circuit['cid_number'] = int(worksheet.cell_value(11, 1))
-circuit['cid_location'] = worksheet.cell_value(12, 1)
-circuit['ies_id'] = int(worksheet.cell_value(13, 1))
-circuit['siebel_id'] = worksheet.cell_value(14, 1)
 
-if pe_device['vendor'] == "NOKIA":
+
+if pe_device['vendor'] == "NOKIA" and (work['work_type'] == "UPGRADE" or work['work_type'] == "DOWNGRADE"):
     ies_worksheet_name = pe_device['hostname'] + "-ies-table"
     ies_worksheet = workbook.sheet_by_name(ies_worksheet_name)
 
@@ -154,18 +166,36 @@ qos = {
     'new_burst_size_ef'             : '',
     'new_bandwidth_ef_de_percent'   : 30,
     'new_bandwidth_ef_de'           : '',
-    'new_burst_size_ef_de'          : ''
+    'new_burst_size_ef_de'          : '',
+    'new_bandwidth_af_percent'      : 30,
+    'new_bandwidth_af'              : '',
+    'new_burst_size_af'             : '',
+    'new_bandwidth_af_de_percent'   : 30,
+    'new_bandwidth_af_de'           : '',
+    'new_burst_size_af_de'          : '',
+    'new_bandwidth_vpn_be_percent'  : 30,
+    'new_bandwidth_vpn_be'          : '',
+    'new_burst_size_vpn_be'         : ''
 }
 
 qos['old_bandwidth'] = int(worksheet.cell_value(50, 1))
 qos['new_bandwidth'] = int(worksheet.cell_value(51, 1))
 qos['new_bandwidth_ef_percent'] = int(worksheet.cell_value(52, 1))
 qos['new_bandwidth_ef_de_percent'] = int(worksheet.cell_value(53, 1))
+qos['new_bandwidth_af_percent'] = int(worksheet.cell_value(51, 3))
+qos['new_bandwidth_af_de_percent'] = int(worksheet.cell_value(52, 3))
+qos['new_bandwidth_vpn_be_percent'] = int(worksheet.cell_value(53, 3))
 qos['new_burst_size'] = int(qos['new_bandwidth'] * 0.0375)
 qos['new_bandwidth_ef'] = int(qos['new_bandwidth'] * qos['new_bandwidth_ef_percent'] / 100)
 qos['new_burst_size_ef'] = int(qos['new_bandwidth_ef'] * 0.0375)
 qos['new_bandwidth_ef_de'] = int(qos['new_bandwidth'] * qos['new_bandwidth_ef_de_percent'] / 100)
 qos['new_burst_size_ef_de'] = int(qos['new_bandwidth_ef_de'] * 0.0375)
+qos['new_bandwidth_af'] = int(qos['new_bandwidth'] * qos['new_bandwidth_af_percent'] / 100)
+qos['new_burst_size_af'] = int(qos['new_bandwidth_af'] * 0.0375)
+qos['new_bandwidth_af_de'] = int(qos['new_bandwidth'] * qos['new_bandwidth_af_de_percent'] / 100)
+qos['new_burst_size_af_de'] = int(qos['new_bandwidth_af_de'] * 0.0375)
+qos['new_bandwidth_vpn_be'] = int(qos['new_bandwidth'] * qos['new_bandwidth_vpn_be_percent'] / 100)
+qos['new_burst_size_vpn_be'] = int(qos['new_bandwidth_vpn_be'] * 0.0375)
 
 if pe_device['vendor'] == "NOKIA":
     qos_worksheet_name = pe_device['hostname'] + "-qos-table"
@@ -194,7 +224,7 @@ if pe_device['vendor'] == "NOKIA":
             qos_desc = str(qos['new_bandwidth']) + "K"
             qos['qos_profile_description'] = 'CUSTOMER-' + qos_desc_post
         print('No existe el qos_profile hay que crear el qos profile: ' + qos['qos_profile_description'] + ', id: ' + str(qos['new_qos_profile_id']) + " con el BW:" + str(qos['new_bandwidth']))
-        sys.exit()
+        #sys.exit()
 
 # Genera estaticas a la loopback del CPE, y a la LAN
 static_routing = {
@@ -227,50 +257,9 @@ bgp_routing['ipv6_received_prefixes'] = worksheet.cell_value(66, 1).split(',')
 bgp_routing['ipv6_received_prefixes_through'] = worksheet.cell_value(67, 1).split(',')
 bgp_routing['send_full_table'] = worksheet.cell_value(68, 1)
 
-# Crea la estructura de directorios y archivos
-
-init_do_files(work['do_number'], work['work_type'], circuit['country'])
-
 
 if pe_device['vendor'] == "NOKIA":
     if (work['service_type'] == "ADI" or work['service_type'] == "DIA") and work['work_type'] == "ALTA":
-        """alu_adi_up(cid_number, customer_id, customer_name, cid_location, service_type, ies_id, iface_name, cvlan_id, svlan_id,
-        ipv4_local_address, ipv4_neighbor_address, ipv4_netmask_lenght, ipv6_local_address, ipv6_neighbor_address,
-        ipv6_netmask_lenght, qos_profile_id, total_bandwidth, peer_as_number, ipv4_received_prefixes,
-        ipv6_received_prefixes, send_full_table, ipv4_lan_net, cpe_ipv4_address, ipv6_lan_net, static_routing, bgp_routing)"""
-        """alu_adi_up_file(
-            work['do_number'],
-            circuit['country'],
-            work['work_type'],
-            circuit['cid_number'],
-            customer['id'],
-            customer['name'],
-            circuit['cid_location'],
-            work['service_type'],
-            circuit['ies_id'],
-            pe_device['iface_name'],
-            pe_l2['cvlan_id'],
-            pe_l2['svlan_id'],
-            ipv4_iface['local_address'],
-            ipv4_iface['neighbor_address'],
-            ipv4_iface['netmask_length'],
-            ipv6_iface['local_address'],
-            ipv6_iface['neighbor_address'],
-            ipv6_iface['netmask_length'],
-            qos['qos_profile_id'],
-            qos['new_bandwidth'],
-            bgp_routing['peer_as_number'],
-            bgp_routing['ipv4_received_prefixes'],
-            bgp_routing['ipv6_received_prefixes'],
-            bgp_routing['send_full_table'],
-            # Esto es para la estatica de la LAN. Agregarlo al excel
-            static_routing['ipv4_lan'],
-            cpe['loopback_ipv4_address'],
-            # Esto es para la estatica de la LAN. Agregarlo al excel
-            static_routing['ipv6_lan'],
-            static_routing['enabled'],
-            bgp_routing['enabled'])
-        """
         alu_adi_up_file2(
             customer,
             work,
@@ -290,11 +279,6 @@ if pe_device['vendor'] == "NOKIA":
         print("Solo esta hecho ADI, y cambio de BW para NOKIA")
 elif pe_device['vendor'] == "JUNIPER":
     if work['service_type'] == "IPVPN" and work['work_type'] == "ALTA":
-        """junos_ipvpn_up_file(do_number, country, work_type,cid_number, customer_id, customer_name, cid_location, service_type, ies_id, iface_name, cvlan_id, svlan_id,
-        ipv4_local_address, ipv4_neighbor_address, ipv4_netmask_lenght, ipv6_local_address, ipv6_neighbor_address,
-        ipv6_netmask_lenght, qos_profile_id, total_bandwidth, peer_as_number, ipv4_received_prefixes,
-        ipv6_received_prefixes, send_full_table, ipv4_lan_net, cpe_ipv4_address, ipv6_lan_net, static_routing, bgp_routing)"""
-        print("Work in progess...")
         junos_ipvpn_up_file2(
             customer, work, circuit, pe_device, pe_l2, ipv4_iface,
             ipv6_iface, cpe, nid, qos, static_routing, bgp_routing, routing_instance)
@@ -304,7 +288,11 @@ elif pe_device['vendor'] == "JUNIPER":
         junos_ipvpn_down_file(
             customer, work, circuit, pe_device, pe_l2, ipv4_iface,
             ipv6_iface, cpe, nid, qos, static_routing, bgp_routing, routing_instance)
+    elif work['service_type'] == "ADI" and work['work_type'] == "ALTA":
+        junos_adi_up(
+            customer, work, circuit, pe_device, pe_l2, ipv4_iface,
+            ipv6_iface, cpe, nid, qos, static_routing, bgp_routing, routing_instance)
     else:
-        print("Solo esta hecho IPVPN UP, BW_UPDATE y BAJA para JUNIPER")
+        print("Solo esta hecho IPVPN UP, BW_UPDATE y ADI UP para JUNIPER")
 else:
     print("Eso todavía no esta hecho...")

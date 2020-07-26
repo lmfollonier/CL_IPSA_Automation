@@ -1,0 +1,49 @@
+PSR1.TUI1.UIO
+
+set interfaces ge-1/0/5 unit 2826 description "CUSTOMER: IMPS-VOIP: I.A.E. INDUSTRIA AGRICOLA EXPORTADORA INAEXPO C.A. (CFS) [IPPBX TRUNK NGN]"
+set interfaces ge-1/0/5 unit 2826 vlan-id 2826
+set interfaces ge-1/0/5 unit 2826 family inet mtu 1500
+set interfaces ge-1/0/5 unit 2826 family inet filter input ge-1/0/5.2826-inet-i
+set firewall family inet filter ge-1/0/5.2826-inet-i term EF_DSCP then count EF.rx-ge-1/0/5.2826-inet-i
+set firewall family inet filter ge-1/0/5.2826-inet-i term EF_DSCP then loss-priority low
+set firewall family inet filter ge-1/0/5.2826-inet-i term EF_DSCP then forwarding-class EF
+
+edit interfaces ge-1/0/5 unit 2826 family inet address 10.160.1.130/28
+set primary
+edit vrrp-group 56
+set virtual-address 10.160.1.129
+set priority 200
+set advertise-interval 1
+set accept-data
+set preempt
+top
+
+set routing-instances pronaca_sip interface ge-1/0/5.2826
+
+
+PSR3.QTO1
+
+set interfaces ae4 unit 2826 description "CUSTOMER: IMPS-VOIP: I.A.E. INDUSTRIA AGRICOLA EXPORTADORA INAEXPO C.A. (CFS) [IPPBX TRUNK NGN]"
+set interfaces ae4 unit 2826 vlan-id 2826
+set interfaces ae4 unit 2826 family inet mtu 1500
+set interfaces ae4 unit 2826 family inet filter input ae4.2826-inet-i
+set firewall family inet filter ae4.2826-inet-i term EF_DSCP then count EF.rx-ae4.2826-inet-i
+set firewall family inet filter ae4.2826-inet-i term EF_DSCP then loss-priority low
+set firewall family inet filter ae4.2826-inet-i term EF_DSCP then forwarding-class EF
+
+
+edit interfaces ae4 unit 2826 family inet address 10.160.1.131/28
+set primary
+edit vrrp-group 56
+set virtual-address 10.160.1.129
+set priority 110
+set advertise-interval 1
+set accept-data
+set preempt
+top
+
+set routing-instances pronaca_sip interface ae4.2826
+
+
+vts3.qto1
+vts4.qto1

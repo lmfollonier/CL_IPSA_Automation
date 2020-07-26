@@ -1,0 +1,9 @@
+show configuration interface {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
+
+show configuration class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} | no-more
+
+show configuration | display set | match {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
+
+show configuration | display set | match {{DATA_VRF}} | no-more
+
+show route table {{DATA_VRF}}.inet.0 {{IPV4_NEIGHBOR_ADDRESS}}

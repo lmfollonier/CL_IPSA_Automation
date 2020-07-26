@@ -1,0 +1,26 @@
+show interface {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
+
+show class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} | no-more
+
+show | display set | match {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
+
+show | display set | match {{DATA_VRF}} | no-more
+
+show route table {{DATA_VRF}}.inet.0 {{IPV4_NEIGHBOR_ADDRESS}}
+
+{% if STATIC_ROUTING and CPE_IPV4_ADDRESS %}
+show route table {{DATA_VRF}}.inet.0 {{CPE_IPV4_ADDRESS}}
+{% endif %}
+
+{% if BGP_ROUTING %}
+show bgp neighbor {{IPV4_NEIGHBOR_ADDRESS}} instance {{DATA_VRF}}
+    {% if IPV6_LOCAL_ADDRESS %}
+    show bgp neighbor {{IPV6_NEIGHBOR_ADDRESS}} instance {{DATA_VRF}}
+    {% endif %}
+{% endif %}
+
+show interface {{IFACE_NAME}} | match hard
+
+ping {{IPV4_NEIGHBOR_ADDRESS}} routing-instance {{DATA_VRF}}
+
+show route table {{DATA_VRF}}.inet.0 community target:{{DATA_VRF_TARGET_IMPORT}}

@@ -1,18 +1,18 @@
 {# ### CREACION DEl PERFIL DE QOS ### #}
 
-{% if QOS_ID < 100 %}
-    /configure qos sap-ingress {{QOS_ID}} create
-    /configure qos sap-ingress {{QOS_ID}} description {{QOS_PROFILE_DESCRIPTION}}
-    /configure qos sap-ingress {{QOS_ID}} queue 1 create
-    /configure qos sap-ingress {{QOS_ID}} queue 1 rate {{BW_K}}
-    /configure qos sap-ingress {{QOS_ID}} queue 11 multipoint create
+{% if NEW_QOS_ID %}
+    /configure qos sap-ingress {{NEW_QOS_ID}} create
+    /configure qos sap-ingress {{NEW_QOS_ID}} description {{QOS_PROFILE_DESCRIPTION}}
+    /configure qos sap-ingress {{NEW_QOS_ID}} queue 1 create
+    /configure qos sap-ingress {{NEW_QOS_ID}} queue 1 rate {{TOTAL_BW}}
+    /configure qos sap-ingress {{NEW_QOS_ID}} queue 11 multipoint create
 {% endif %}
 
 {# ### CREACION DE CLIENTE ### #}
 
 {% if not CUSTOMER_EXISTS %}
     /configure service customer {{CUSTOMER_ID}} create
-    /configure service customer {{CUSTOMER_ID}} description {{CUSTOMER_NAME}}
+    /configure service customer {{CUSTOMER_ID}} description "{{CUSTOMER_NAME}}"
 {% endif %}
 
 {# ### CREACION DE IES ### #}
@@ -34,7 +34,11 @@
     /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ipv6 address {{IPV6_LOCAL_ADDRESS}}/{{IPV6_NETMASK_LENGHT}}
 {% endif %}
 /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" create
+{% if NEW_QOS_ID %}
+/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{NEW_QOS_ID}}
+{% else %}
 /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{QOS_ID}}
+{% endif %}
 /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" egress agg-rate rate {{TOTAL_BW}}
 
 {# ### RUTAS ESTATICAS ### #}
