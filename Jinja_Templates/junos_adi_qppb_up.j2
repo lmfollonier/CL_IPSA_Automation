@@ -1,0 +1,38 @@
+
+edit interfaces ae21.4060
+set description "CUSTOMER: IMPS-CLI: SOCIEDAD COMERCIAL CASLEI SPA (CFS:500190861) [1000M/100M - LAMPA CAMINO LIPANGUE, PARCELA 7]"
+set vlan-tags outer 0x8100.4060
+set vlan-tags inner 0x8100.1200
+set family inet accounting source-class-usage output
+set family inet accounting destination-class-usage
+set family inet rpf-check mode loose
+set family inet no-redirects
+set family inet filter input NETPROTECT-BE
+set family inet filter output qppb-1000M-100M-map
+set family inet address 8.242.205.9/30
+top
+
+
+edit firewall filter forwarding-policer term CUST-NATIONAL-AE21.4060
+set from destination-class 50
+set from interface ae21.4060
+set then policer CUSTOMER-1000M
+top
+edit firewall filter forwarding-policer term CUST-INTERNATIONAL-AE21.4060
+set from destination-class 55
+set from interface ae21.4060
+set then policer CUSTOMER-100M
+top
+insert firewall filter forwarding-policer term END after term CUST-INTERNATIONAL-AE21.4060
+
+
+
+edit firewall filter qppb-400M-250M-map
+set interface-specific
+set term national from source-class 50
+set term national then policer CUSTOMER-400M
+set term international from source-class 55
+set term international then policer CUSTOMER-250M
+set term local then accept
+top
+

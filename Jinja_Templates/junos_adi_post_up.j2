@@ -1,12 +1,12 @@
-show configuration interface {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
+show interface {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
 
-show configuration | display set | match {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
+show | display set | match {{IFACE_NAME}}.{{DATA_UNIT}} | no-more
 
-show configuration class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} | no-more
+show class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} | no-more
 
-show configuration | display set | match "{{IPV4_LOCAL_ADDRESS}}|{{IPV4_NEIGHBOR_ADDRESS}}|{{IPV4_LAN_NET}}|{{CVLAN_ID}}"
+show | display set | match "{{IPV4_LOCAL_ADDRESS}}|{{IPV4_NEIGHBOR_ADDRESS}}|{{IPV4_LAN_NET}}|{{CVLAN_ID}}"
 
-show configuration | display set | match "{{IPV6_LOCAL_ADDRESS}}|{{IPV6_NEIGHBOR_ADDRESS}}|{{IPV6_LAN_NET}}|{{CVLAN}}"
+show | display set | match "{{IPV6_LOCAL_ADDRESS}}|{{IPV6_NEIGHBOR_ADDRESS}}|{{IPV6_LAN_NET}}|{{CVLAN}}"
 
 show route table inet.0 {{IPV4_LOCAL_ADDRESS}} protocol direct
 

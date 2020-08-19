@@ -19,7 +19,7 @@
     {% endif %}
 {% endif %} #}
 
-set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} description "CUSTOMER: IMPS-MPLS: {{CUSTOMER_NAME}} (CFS:{{CID}}) [{{CID_LOCATION}}]"
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} description "CUSTOMER: IMPS-CLI: {{CUSTOMER_NAME}} (CFS:{{CID}}) [{{CID_LOCATION}}]"
 
 {% if SVLAN_ID %}
     set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} vlan-tags outer 0x8100.{{SVLAN_ID}}
@@ -30,6 +30,7 @@ set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} description "CUSTOMER: IMPS-MPL
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet rpf-check mode loose
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet no-redirects
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet filter input NETPROTECT-BE
+set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet filter output NETPROTECT-BE-OUT
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet policer input CUSTOMER-10M
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet policer output CUSTOMER-10M
 set interfaces {{IFACE_NAME}} unit {{DATA_UNIT}} family inet address {{IPV4_LOCAL_ADDRESS}}/{{IPV4_NETMASK_LENGHT}}

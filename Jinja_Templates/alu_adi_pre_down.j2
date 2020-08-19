@@ -2,19 +2,17 @@ admin  display-config | match context all "customer {{CUSTOMER_ID}}"
 
 admin  display-config | match context all {{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}
 
+admin  display-config | match context all "ies {{IES_ID}}"
+
 {# admin  display-config | match context all {{IPV4_LOCAL_ADDR}} #}
 
 {% if QOS_ID == "no existe" %}
-admin  display-config | match context all "sap-ingress" | match context all {{TOTAL_BW}}
+admin  display-config | match context all "sap-ingress" | match context all "{{TOTAL_BW}} "
 {% else %}
 admin  display-config | match context all "sap-ingress {{QOS_ID}}"
 {% endif %}
 
 admin  display-config | match context all {{IPV4_NEIGHBOR_ADDR}}
-
-{% if BGP_ROUTING %}
-admin  display-config | match context all AS{{PEER_AS_NUMBER}}
-{% endif %}
 
 show router route-table {{IPV4_NEIGHBOR_ADDR}}
 

@@ -1,6 +1,6 @@
 {# ### CREACION DEl PERFIL DE QOS ### #}
 
-{% if NEW_QOS_ID %}
+{% if NEW_QOS_ID == "no existe" %}
     /configure qos sap-ingress {{NEW_QOS_ID}} create
     /configure qos sap-ingress {{NEW_QOS_ID}} description {{QOS_PROFILE_DESCRIPTION}}
     /configure qos sap-ingress {{NEW_QOS_ID}} queue 1 create
@@ -20,26 +20,54 @@
 /configure service ies {{IES_ID}} customer {{CUSTOMER_ID}} create
 /configure service ies {{IES_ID}} no shutdown
 
-{# ### CREACION DE IES ### #}
+{# ### CREACION DE INTERFACE ### #}
 
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" create
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" no shutdown
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" description "CUSTOMER: IMPS-CLI: {{CUSTOMER_NAME}} [{{CID_LOCATION}}, CID:{{CID}}] {{SERVICE_TYPE}}@{{BW_M}}Mbps"
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" enable-ingress-stats
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" urpf-check mode loose
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" tos-marking-state trusted
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" cflowd-parameters sampling unicast type interface
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" address {{IPV4_LOCAL_ADDR}}/{{IPV4_NETMASK_LENGTH}}
-{% if IPV6_LOCAL_ADDRESS %}
-    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ipv6 address {{IPV6_LOCAL_ADDRESS}}/{{IPV6_NETMASK_LENGHT}}
-{% endif %}
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" create
-{% if NEW_QOS_ID %}
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{NEW_QOS_ID}}
+{% if SVLAN_ID == 0 %}
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" create
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" no shutdown
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" description "CUSTOMER: IMPS-CLI: {{CUSTOMER_NAME}} [{{CID_LOCATION}}, CID:{{CID}}] {{SERVICE_TYPE}}@{{BW_M}}Mbps"
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" enable-ingress-stats
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" urpf-check mode loose
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" tos-marking-state trusted
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" cflowd-parameters sampling unicast type interface
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" address {{IPV4_LOCAL_ADDR}}/{{IPV4_NETMASK_LENGTH}}
+  {% if IPV6_LOCAL_ADDRESS %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" ipv6 address {{IPV6_LOCAL_ADDRESS}}/{{IPV6_NETMASK_LENGHT}}
+  {% endif %}
+
+{# ### CREACION DE SAP ### #}
+
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{CVLAN_ID}}" create
+  {% if NEW_QOS_ID %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{CVLAN_ID}}" ingress qos {{NEW_QOS_ID}}
+  {% else %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{CVLAN_ID}}" ingress qos {{QOS_ID}}
+  {% endif %}
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{CVLAN_ID}}" egress agg-rate rate {{TOTAL_BW}}
+
 {% else %}
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{QOS_ID}}
+
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" create
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" no shutdown
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" description "CUSTOMER: IMPS-CLI: {{CUSTOMER_NAME}} [{{CID_LOCATION}}, CID:{{CID}}] {{SERVICE_TYPE}}@{{BW_M}}Mbps"
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" enable-ingress-stats
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" urpf-check mode loose
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" tos-marking-state trusted
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" cflowd-parameters sampling unicast type interface
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" address {{IPV4_LOCAL_ADDR}}/{{IPV4_NETMASK_LENGTH}}
+  {% if IPV6_LOCAL_ADDRESS %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ipv6 address {{IPV6_LOCAL_ADDRESS}}/{{IPV6_NETMASK_LENGHT}}
+  {% endif %}
+
+{# ### CREACION DE SAP ### #}
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" create
+  {% if NEW_QOS_ID %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{NEW_QOS_ID}}
+  {% else %}
+    /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" ingress qos {{QOS_ID}}
+  {% endif %}
+  /configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" egress agg-rate rate {{TOTAL_BW}}
 {% endif %}
-/configure service ies {{IES_ID}} interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" sap "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}" egress agg-rate rate {{TOTAL_BW}}
 
 {# ### RUTAS ESTATICAS ### #}
 

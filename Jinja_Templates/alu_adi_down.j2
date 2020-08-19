@@ -9,3 +9,18 @@
 /configure service ies {{IES_ID}} no interface "{{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}"
 /configure service ies {{IES_ID}} shutdown
 /configure service no ies {{IES_ID}}
+
+
+/configure router policy-options abort
+/configure router policy-options begin
+
+/configure router policy-options no policy-statement "CUSTOMER:AS10753-BROADNET-4"
+
+/configure router policy-options no prefix-list "CUSTOMER:AS10753-BROADNET-4"
+/configure router policy-options commit
+
+
+/configure router bgp group "AS10753" neighbor 201.234.209.70 shutdown
+/configure router bgp group "AS10753" no neighbor 201.234.209.70
+
+/configure filter match-list ip-prefix-list "cust-bgp" no prefix 201.234.209.70/32

@@ -1,0 +1,23 @@
+
+delete interfaces ge-1/0/12 unit 0
+delete interfaces ge-1/0/12 disable
+
+set interfaces ge-1/0/12 description "CUSTOMER: IMPS-MPLS: BANCO PICHINCHA (CFS:500189515) [BP DC CTL CARCELEN]"
+set interfaces ge-1/0/12 enable
+set interfaces ge-1/0/12 flexible-vlan-tagging
+set interfaces ge-1/0/12 mtu 9216
+set interfaces ge-1/0/12 encapsulation extended-vlan-bridge
+
+set interfaces ge-1/0/12 unit 1611 enable
+set interfaces ge-1/0/12 unit 1611 description "CUSTOMER: IMPS-MPLS: BANCO PICHINCHA (CFS:500189515) [BP DC CTL CARCELEN]"
+set interfaces ge-1/0/12 unit 1611 vlan-id 1611
+
+set interfaces ae1 unit 1611 description "CUSTOMER: IMPS-MPLS: BANCO PICHINCHA (CFS:500189515) [BP DC CTL CARCELEN]"
+set interfaces ae1 unit 1611 vlan-id 1611
+
+set vlans vlan1611 description BANCO_PICHINCHA
+set vlans vlan1611 interface ge-1/0/12.1611
+set vlans vlan1611 interface ae1.1611
+
+set interfaces ge-0/0/15 unit 505 vlan-id 505
+set vlans vlan505 interface ge-1/0/12.505

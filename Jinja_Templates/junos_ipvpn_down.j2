@@ -36,6 +36,11 @@ delete class-of-service interfaces {{IFACE_NAME}} unit {{DATA_UNIT}}
 delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}-in
 delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-i
 delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.EF-DE-i
+delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.AF-i
+delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.AF-DE-i
+delete firewall policer {{IFACE_NAME}}.{{DATA_UNIT}}.VPN-BE-i
+
+
 delete firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-i
 delete firewall family inet filter {{IFACE_NAME}}.{{DATA_UNIT}}-inet-e
 

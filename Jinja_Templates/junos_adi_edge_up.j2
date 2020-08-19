@@ -1,0 +1,11 @@
+set interfaces ae30 unit 1088 description "CUSTOMER: IMPS-CLI: COGNIZANT TECHNOLOGY SOLUTIONS DE ARGENTINA SRL (CFS:500182191) [CALLE MAIPU 1 PISO 2 (EDIFICIO PAMPA ENERGÍA)]"
+
+    set interfaces ae30 unit 1088 vlan-tags outer 0x8100.1088
+    set interfaces ae30 unit 1088 vlan-tags inner 0x8100.1200
+
+set interfaces ae30 unit 1088 family inet rpf-check mode loose
+set interfaces ae30 unit 1088 family inet filter input customer-cflow
+set interfaces ae30 unit 1088 family inet policer input ratelimit_500M
+set interfaces ae30 unit 1088 family inet policer output ratelimit_500M
+set interfaces ae30 unit 1088 family inet address 10.10.10.1/30
+

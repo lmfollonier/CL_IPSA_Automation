@@ -176,7 +176,7 @@ def get_do_cierre(do_number, work_type, country):
     # Agrego "S" al final de la orden, esto tranquilamente se podría hacer desde las variables
     work_type += 'S'
     working_dir = base_dir + work_type + "/" + country + "/" + str(do_number) + '/'
-    pe_script = working_dir + str(do_number) + '-DO-INFO-CIERRE.txt'
+    pe_script = working_dir + str(do_number) + '-INFO-CIERRE.txt'
     file = open(pe_script, 'w')
     #file.write('############################################################################')
     return (file)

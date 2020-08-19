@@ -2,6 +2,8 @@ admin  display-config | match context all "customer {{CUSTOMER_ID}}"
 
 admin  display-config | match context all {{IFACE_NAME}}:{{SVLAN_ID}}.{{CVLAN_ID}}
 
+admin  display-config | match context all "ies {{IES_ID}}"
+
 {# admin  display-config | match context all {{IPV4_LOCAL_ADDR}} #}
 
 {% if QOS_ID == "no existe" %}

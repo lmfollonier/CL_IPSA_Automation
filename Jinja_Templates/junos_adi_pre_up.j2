@@ -8,10 +8,10 @@ show configuration | display set | match "{{IPV4_LOCAL_ADDRESS}}|{{IPV4_NEIGHBOR
 
 show configuration | display set | match "{{IPV6_LOCAL_ADDRESS}}|{{IPV6_NEIGHBOR_ADDRESS}}|{{IPV6_LAN_NET}}|{{CVLAN}}"
 
-show route table inet.0 {{IPV4_LOCAL_ADDRESS}} protocol direct
+show route table inet.0 {{IPV4_LOCAL_NET}} protocol direct
 
 show route table inet.0 {{IPV4_LAN_NET}} exact
 
-show route table inet6.0 {{IPV6_LOCAL_ADDRESS}} protocol direct
+show route table inet6.0 {{IPV6_LOCAL_NET}} protocol direct
 
 show route table inet6.0 {{IPV6_LAN_NET}} exact

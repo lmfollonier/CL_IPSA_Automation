@@ -15,11 +15,13 @@ def alu_adi_up_file2(customer, work, circuit, pe_device, pe_l2, ipv4_iface,
         'SERVICE_TYPE': work['service_type'],
         'IES_ID': circuit['ies_id'],
 
+        'PE_HOSTNAME': pe_device['hostname'],
         'IFACE_NAME': pe_device['iface_name'],
         'DATA_UNIT': pe_device['subiface'],
         'CVLAN_ID': pe_l2['cvlan_id'],
         'SVLAN_ID': pe_l2['svlan_id'],
 
+        'IPV4_LOCAL_NET': ipv4_iface['wan_net'],
         'IPV4_LOCAL_ADDR': ipv4_iface['local_address'],
         'IPV4_NEIGHBOR_ADDR': ipv4_iface['neighbor_address'],
         'IPV4_NETMASK_LENGTH': ipv4_iface['netmask_length'],
@@ -75,7 +77,12 @@ def alu_adi_up_file2(customer, work, circuit, pe_device, pe_l2, ipv4_iface,
     result = template.render(environment)
     with open(file.name, 'w') as pe_script:
         pe_script.write(result)
-
+    # Genera el INFO-CIERRE
+    file = get_do_cierre(work['do_number'], work['work_type'], circuit['country'])
+    template = env.get_template('alu_adi_up_cierre.j2')
+    result = template.render(environment)
+    with open(file.name, 'w') as pe_script:
+        pe_script.write(result)
 
 
 

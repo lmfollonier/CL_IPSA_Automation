@@ -2,6 +2,7 @@ import os
 import sys
 from ipaddress import ip_network
 
+from CLI_Scripts.ALU.ALU_ADI_down import alu_adi_down
 from CLI_Scripts.ALU.ALU_ADI_up_file import alu_adi_up_file2
 from CLI_Scripts.ALU.ALU_BW_update_file import alu_adi_bw_update
 from CLI_Scripts.Juniper.JunOS_ADI_UP import junos_adi_up
@@ -86,13 +87,22 @@ if pe_device['vendor'] == "NOKIA" and (work['work_type'] == "UPGRADE" or work['w
 
     for row_num in range(0, ies_worksheet.nrows):
         row_value = ies_worksheet.cell_value(row_num,1)
-        if row_value == (pe_device['iface_name'] + ":" + str(pe_l2['svlan_id']) + "." + str(pe_l2['cvlan_id']) ):
-            print(int(ies_worksheet.cell_value(row_num,0)))
-            circuit['ies_id'] = int(ies_worksheet.cell_value(row_num, 0))
-            break
+        if pe_l2['svlan_id'] == 0 :
+            if row_value == (pe_device['iface_name'] + ":" + str(pe_l2['cvlan_id']) ):
+                print(int(ies_worksheet.cell_value(row_num,0)))
+                circuit['ies_id'] = int(ies_worksheet.cell_value(row_num, 0))
+                break
+            else:
+                circuit['ies_id'] = "no existe"
+                #circuit['new_ies_profile_id'] = int(ies_worksheet.cell_value(row_num, 0)) + 1
         else:
-            circuit['ies_id'] = "no existe"
-            #circuit['new_ies_profile_id'] = int(ies_worksheet.cell_value(row_num, 0)) + 1
+            if row_value == (pe_device['iface_name'] + ":" + str(pe_l2['svlan_id']) + "." + str(pe_l2['cvlan_id'])):
+                print(int(ies_worksheet.cell_value(row_num, 0)))
+                circuit['ies_id'] = int(ies_worksheet.cell_value(row_num, 0))
+                break
+            else:
+                circuit['ies_id'] = "no existe"
+                # circuit['new_ies_profile_id'] = int(ies_worksheet.cell_value(row_num, 0)) + 1
 
     if circuit['ies_id'] == "no existe":
         print('verificar ies con: admin display-config | match context all ' + pe_device['iface_name'] + ":" + str(pe_l2['svlan_id']) + "." + str(pe_l2['cvlan_id']))
@@ -275,6 +285,8 @@ if pe_device['vendor'] == "NOKIA":
             bgp_routing)
     elif work['work_type'] == "UPGRADE" or work['work_type'] == "DOWNGRADE":
         alu_adi_bw_update(work, pe_device, pe_l2, circuit, qos)
+    elif work['work_type'] == "BAJA":
+        alu_adi_down(work, circuit, pe_device, pe_l2, ipv4_iface, ipv6_iface, cpe, static_routing, bgp_routing)
     else:
         print("Solo esta hecho ADI, y cambio de BW para NOKIA")
 elif pe_device['vendor'] == "JUNIPER":
